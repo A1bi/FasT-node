@@ -1,0 +1,11 @@
+{
+  "name": "FasT-node",
+  "version": "0.1.0",
+  "dependencies": {
+    "moment": ""
+  },
+  "devDependencies": {
+    "should": "",
+    "mocha": ""
+  }
+}
