@@ -2,10 +2,11 @@
   "name": "FasT-node",
   "version": "0.1.0",
   "dependencies": {
-    "moment": ""
+    "moment": "2.x",
+    "socket.io": "0.9.x"
   },
   "devDependencies": {
-    "should": "",
-    "mocha": ""
+    "should": "1.x",
+    "mocha": "1.x"
   }
 }
