@@ -12,9 +12,15 @@ function Seat(r) {
     return false;
   };
   
-  this.forClient = function () {
+  this.release = function () {
+    this.reserved = false;
+  };
+  
+  this.forClient = function (selected) {
+    selected = selected || [];
     return {
-      reserved: this.reserved
+      reserved: this.reserved,
+      selected: (selected.indexOf(this) != -1) ? true : false
     };
   };
 };
@@ -27,8 +33,9 @@ var seats = {
     console.log("Updating seats...");
     
     railsApi.get("seats", "", function (seats) {
-      for (var seatId in seats) {
-        var seatInfo = seats[seatId];
+      for (var i in seats) {
+        var seatInfo = seats[i];
+        var seatId = seatInfo.id;
     
         for (var dateId in seatInfo.reserved) {
           _this.dates[dateId] = _this.dates[dateId] || {};
@@ -46,10 +53,23 @@ var seats = {
     });
   },
   
-  getAllOnDate: function (dateId) {
+  get: function (seatId, dateId) {
+    return this.dates[dateId][seatId];
+  },
+  
+  reserve: function (seatId, dateId) {
+    var seat = this.get(seatId, dateId);
+    if (seat && seat.reserve()) {
+      return seat;
+    }
+    
+    return null;
+  },
+  
+  getAllOnDate: function (dateId, selected) {
     var seats = {};
     for (var seatId in this.dates[dateId]) {
-      seats[seatId] = this.dates[dateId][seatId].forClient();
+      seats[seatId] = this.dates[dateId][seatId].forClient(selected);
     }
     
     return seats;

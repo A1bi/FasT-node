@@ -24,7 +24,12 @@ var railsApi = {
       });
       
       res.on("end", function () {
-        callback(JSON.parse(data));
+        try {
+          callback(JSON.parse(data));
+        } catch (error) {
+          console.log(error);
+          callback({});
+        }
       });
     
     }).on("error", function (error) {
