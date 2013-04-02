@@ -25,7 +25,6 @@ io.sockets.on("connection", function (socket) {
   
   order.on("updatedSeats", function (dateId, updatedSeats) {
     orders.forEach(function (o) {
-      if (o == order) return;
       o.updateSeats(dateId, updatedSeats);
     });
   });
