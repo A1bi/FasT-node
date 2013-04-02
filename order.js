@@ -1,3 +1,5 @@
+var Validator = require("validator").Validator;
+
 function Order(socket, seats) {
   this.socket = socket;
   this.seats = seats;
@@ -40,32 +42,32 @@ Order.prototype.update = function (order, callback) {
     ok: true,
     errors: {}
   };
+  var info = order.info;
   
   switch (order.step) {
     case "date":
-    if (this.date != order.info.date) {
-      if (!this.seats.dates[order.info.date]) {
-        response.errors['general'] = "Invalid date";
-      } else {
+    if (this.validateStep("Date", info, response)) {
+      if (this.date != info.date) {
         this.releaseSeats();
-        this.date = order.info.date;
+        this.date = info.date;
       }
-    }
-    
-    if (this.getNumberOfTickets(order.info.numbers) > 0) {
-      this.numbers = order.info.numbers;
+      this.numbers = info.numbers;
       this.updateReservedSeats();
-    } else {
-      response.errors['general'] = "Too few tickets";
     }
     break;
     
     case "seats":
-    if (this.reservedSeats.length != this.getNumberOfTickets()) {
-      // TODO: i18n
-      response.errors['general'] = "Die Anzahl der gewählten Sitzplätze stimmt nicht mit der Anzahl Ihrer Tickets überein.";
+    this.validateStep("Seats", info, response);
+    break;
+    
+    case "address":
+    if (this.validateStep("Address", info, response)) {
+      this.address = info;
     }
     break;
+    
+    default:
+    response.errors['general'] = "Invalid step";
   }
   
   if (Object.keys(response.errors).length > 0) {
@@ -137,5 +139,56 @@ Order.prototype.getNumberOfTickets = function (numbers) {
   }
   return number;
 };
+
+Order.prototype.validateStep = function (step, info, response) {
+  this['validate' + step](info, response);
+  return this.returnErrors(response);
+};
+
+Order.prototype.validateDate = function (info, response) {
+  if (!this.seats.dates[info.date]) {
+    response.errors['general'] = "Invalid date";
+  }
+  if (this.getNumberOfTickets(info.numbers) < 1) {
+    response.errors['general'] = "Too few tickets";
+  }
+};
+
+Order.prototype.validateSeats = function (info, response) {
+  if (this.reservedSeats.length != this.getNumberOfTickets()) {
+    // TODO: i18n
+    response.errors['general'] = "Die Anzahl der gewählten Sitzplätze stimmt nicht mit der Anzahl Ihrer Tickets überein.";
+  }
+};
+
+Order.prototype.validateAddress = function (info, response) {
+  var validator = new Validator();
+  
+  ["first_name", "last_name", "phone"].forEach(function (key) {
+    validator.check(info[key], [key, "Bitte füllen Sie dieses Feld aus."]).notEmpty();
+  });
+  
+  validator.check(info.gender, ["gender", "Bitte geben Sie eine korrekte Anrede an."]).isIn(["0", "1"]);
+  validator.check(info.plz, ["plz", "Bitte geben Sie eine korrekte Postleitzahl an."]).isInt().len(5, 5);
+  validator.check(info.email, ["email", "Bitte geben Sie eine korrekte e-mail-Adresse an."]).isEmail();
+  
+  var errors = {};
+  validator._errors.forEach(function (error) {
+    errors[error[0]] = error[1];
+  });
+  response.errors = errors;
+};
+
+Order.prototype.returnErrors = function (response) {
+  if (Object.keys(response.errors).length > 0) return false;
+  return true;
+};
+
+
+Validator.prototype.error = function (error) {
+  this._errors.push(error);
+  return this;
+};
+
 
 module.exports = Order;
