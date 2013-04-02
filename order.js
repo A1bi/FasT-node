@@ -6,6 +6,7 @@ function Order(socket, seats) {
   this.address = {};
   
   this.registerEvents();
+  this.updateSeats();
 };
 
 Order.prototype.__proto__ = process.EventEmitter.prototype;
@@ -39,7 +40,6 @@ Order.prototype.update = function (order, callback) {
     if (this.date != order.info.date) {
       this.releaseSeats();
       this.date = order.info.date;
-      this.updateSeats();
     }
     break;
   }
@@ -56,7 +56,7 @@ Order.prototype.reserveSeat = function (seatId, callback) {
   var seat = this.seats.reserve(seatId, this.date);
   if (seat) {
     this.reservedSeats.push(seat);
-    this.updatedSeats();
+    this.updatedSeats(this.date, [seat]);
     
     console.log("Seat reserved");
   }
@@ -64,25 +64,38 @@ Order.prototype.reserveSeat = function (seatId, callback) {
   callback({ ok: seat != null, seatId: seatId });
 };
 
-Order.prototype.updateSeats = function (date) {
-  if (!this.date || (date != null && date != this.date)) return;
+Order.prototype.updateSeats = function (dateId, seats) {
+  var updatedSeats = {};
+  
+  if (dateId) {
+    updatedSeats[dateId] = {};
+    seats.forEach(function (seat) {
+      updatedSeats[dateId][seat.id] = seat.forClient(this.reservedSeats);
+    });
+  
+  } else {
+    updatedSeats = this.seats.getAll();
+  }
   
   this.socket.emit("updateSeats", {
-    seats: this.seats.getAllOnDate(this.date, this.reservedSeats)
+    seats: updatedSeats
   });
 };
 
-Order.prototype.updatedSeats = function () {
-  this.emit("updatedSeats");
+Order.prototype.updatedSeats = function (dateId, updatedSeats) {
+  this.emit("updatedSeats", dateId, updatedSeats);
 };
 
 Order.prototype.releaseSeats = function () {
+  if (this.reservedSeats.length < 1) return;
+  
+  var updatedSeats = this.reservedSeats.slice(0);
   this.reservedSeats.forEach(function (seat) {
     seat.release();
   });
   this.reservedSeats.length = 0;
   
-  this.updatedSeats();
+  this.updatedSeats(this.date, updatedSeats);
 };
 
 module.exports = Order;

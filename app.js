@@ -23,10 +23,10 @@ io.sockets.on("connection", function (socket) {
   var order = new Order(socket, seats);
   orders.push(order);
   
-  order.on("updatedSeats", function () {
+  order.on("updatedSeats", function (dateId, updatedSeats) {
     orders.forEach(function (o) {
       if (o == order) return;
-      o.updateSeats(order.date);
+      o.updateSeats(dateId, updatedSeats);
     });
   });
   

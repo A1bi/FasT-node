@@ -1,6 +1,7 @@
 var railsApi = require("./railsApi");
 
-function Seat(r) {
+function Seat(id, r) {
+  this.id = id;
   this.reserved = r || false;
   
   this.reserve = function () {
@@ -42,7 +43,7 @@ var seats = {
       
           var seat = _this.dates[dateId][seatId];
           if (!seat) {
-            _this.dates[dateId][seatId] = new Seat(seatInfo.reserved[dateId]);
+            _this.dates[dateId][seatId] = new Seat(seatId, seatInfo.reserved[dateId]);
           } else if (seatInfo.reserved[dateId]) {
             seat.reserved = seatInfo.reserved[dateId];
           }
@@ -64,6 +65,15 @@ var seats = {
     }
     
     return null;
+  },
+  
+  getAll: function (selected) {
+    var seats = {};
+    for (var dateId in this.dates) {
+      seats[dateId] = this.getAllOnDate(dateId, selected);
+    }
+    
+    return seats;
   },
   
   getAllOnDate: function (dateId, selected) {
