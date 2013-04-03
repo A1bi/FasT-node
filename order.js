@@ -1,5 +1,7 @@
 var Validator = require("validator").Validator;
 
+var railsApi = require("./railsApi");
+
 function Order(socket, seats) {
   this.socket = socket;
   this.seats = seats;
@@ -66,15 +68,44 @@ Order.prototype.update = function (order, callback) {
     }
     break;
     
+    case "payment":
+    break;
+    
+    case "confirm":
+    this.validateStep("Confirm", info, response);
+    break;
+    
     default:
     response.errors['general'] = "Invalid step";
   }
   
-  if (Object.keys(response.errors).length > 0) {
+  if (this.returnErrors(response)) {
+    if (order.step == "confirm") {
+      this.place();
+    }
+    
+  } else {
     response.ok = false;
   }
   
   callback(response);
+};
+
+Order.prototype.place = function () {
+  var orderInfo = {
+    order: {
+      date: this.date,
+      numbers: this.numbers,
+      seats: this.reservedSeats.map(function (seat) {
+        return seat.id;
+      }),
+      address: this.address
+    }
+  };
+  
+  railsApi.post("orders", null, orderInfo, function (response) {
+    console.log("Order placed");
+  });
 };
 
 Order.prototype.reserveSeat = function (seatId, callback) {
@@ -177,6 +208,10 @@ Order.prototype.validateAddress = function (info, response) {
     errors[error[0]] = error[1];
   });
   response.errors = errors;
+};
+
+Order.prototype.validateConfirm = function (info, response) {
+  if (!info.accepted) response.errors.accepted = "Bitte stimmen Sie den AGB zu.";
 };
 
 Order.prototype.returnErrors = function (response) {

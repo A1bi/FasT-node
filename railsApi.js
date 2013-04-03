@@ -4,17 +4,31 @@ var apiHost = "127.0.0.1";
 
 var railsApi = {
   get: function (resource, action, callback) {
-    this.request(resource + "/" + action, "GET", function (data) {
+    this.requestOnResource(resource, action, "GET", null, callback);
+  },
+  
+  post: function (resource, action, data, callback) {
+    this.requestOnResource(resource, action, "POST", data, callback);
+  },
+  
+  requestOnResource: function (resource, action, method, data, callback) {
+    this.request(resource + ((action) ? "/" + action : ""), method, data, function (data) {
       callback(data);
     });
   },
   
-  request: function (path, method, callback) {
+  request: function (path, method, data, callback) {
+    var body = JSON.stringify(data || {});
+    
     var req = https.request({
       hostname: apiHost,
       method: method,
       path: "/api/" + path,
-      rejectUnauthorized: false
+      rejectUnauthorized: false,
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": body.length
+      }
       
     }, function (res) {
       var data = [];
@@ -33,9 +47,12 @@ var railsApi = {
       });
     
     }).on("error", function (error) {
-      console.log(error);
+      console.log(error);      
+    });
     
-    }).end();
+    req.write(body);
+    
+    req.end();
   }
 };
 
