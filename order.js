@@ -9,6 +9,7 @@ function Order(socket, seats) {
   this.date = null;
   this.numbers = {};
   this.address = {};
+  this.placed = false;
   
   this.registerEvents();
   this.updateSeats();
@@ -33,7 +34,7 @@ Order.prototype.registerEvents = function () {
 };
 
 Order.prototype.destroy = function () {
-  this.releaseSeats();
+  if (!this.placed) this.releaseSeats();
   this.emit("destroyed");
   
   console.log("Order destroyed");
@@ -92,6 +93,7 @@ Order.prototype.update = function (order, callback) {
 };
 
 Order.prototype.place = function () {
+  var _this = this;
   var orderInfo = {
     order: {
       date: this.date,
@@ -104,7 +106,10 @@ Order.prototype.place = function () {
   };
   
   railsApi.post("orders", null, orderInfo, function (response) {
-    console.log("Order placed");
+    if (response.ok) {
+      _this.placed = true;
+      console.log("Order placed");
+    }
   });
 };
 
