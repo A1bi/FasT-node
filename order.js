@@ -10,6 +10,7 @@ function Order(socket, seats) {
   this.numbers = {};
   this.address = {};
   this.placed = false;
+  this.validator = new Validator();
   
   this.registerEvents();
   this.updateSeats();
@@ -47,6 +48,8 @@ Order.prototype.update = function (order, callback) {
   };
   var info = order.info;
   
+  this.validator._errors = [];
+  
   switch (order.step) {
     case "date":
     if (this.validateStep("Date", info, response)) {
@@ -70,6 +73,9 @@ Order.prototype.update = function (order, callback) {
     break;
     
     case "payment":
+    if (this.validateStep("Payment", info, response)) {
+      this.payment = info;
+    }
     break;
     
     case "confirm":
@@ -80,12 +86,15 @@ Order.prototype.update = function (order, callback) {
     response.errors['general'] = "Invalid step";
   }
   
-  if (this.returnErrors(response)) {
+  if (this.returnsErrors(response)) {
     if (order.step == "confirm") {
       this.place();
     }
     
   } else {
+    this.validator._errors.forEach(function (error) {
+      response.errors[error[0]] = error[1];
+    });
     response.ok = false;
   }
   
@@ -101,7 +110,8 @@ Order.prototype.place = function () {
       seats: this.reservedSeats.map(function (seat) {
         return seat.id;
       }),
-      address: this.address
+      address: this.address,
+      payment: this.payment
     }
   };
   
@@ -178,7 +188,7 @@ Order.prototype.getNumberOfTickets = function (numbers) {
 
 Order.prototype.validateStep = function (step, info, response) {
   this['validate' + step](info, response);
-  return this.returnErrors(response);
+  return this.returnsErrors(response);
 };
 
 Order.prototype.validateDate = function (info, response) {
@@ -198,29 +208,32 @@ Order.prototype.validateSeats = function (info, response) {
 };
 
 Order.prototype.validateAddress = function (info, response) {
-  var validator = new Validator();
-  
+  var _this = this;
   ["first_name", "last_name", "phone"].forEach(function (key) {
-    validator.check(info[key], [key, "Bitte füllen Sie dieses Feld aus."]).notEmpty();
+    _this.validator.check(info[key], [key, "Bitte füllen Sie dieses Feld aus."]).notEmpty();
   });
   
-  validator.check(info.gender, ["gender", "Bitte geben Sie eine korrekte Anrede an."]).isIn(["0", "1"]);
-  validator.check(info.plz, ["plz", "Bitte geben Sie eine korrekte Postleitzahl an."]).isInt().len(5, 5);
-  validator.check(info.email, ["email", "Bitte geben Sie eine korrekte e-mail-Adresse an."]).isEmail();
-  
-  var errors = {};
-  validator._errors.forEach(function (error) {
-    errors[error[0]] = error[1];
-  });
-  response.errors = errors;
+  this.validator.check(info.gender, ["gender", "Bitte geben Sie eine korrekte Anrede an."]).isIn(["0", "1"]);
+  this.validator.check(info.plz, ["plz", "Bitte geben Sie eine korrekte Postleitzahl an."]).isInt().len(5, 5);
+  this.validator.check(info.email, ["email", "Bitte geben Sie eine korrekte e-mail-Adresse an."]).isEmail();
+};
+
+Order.prototype.validatePayment = function (info, response) {
+  this.validator.check(info.method, ["general", "Invalid payment method"]).isIn(["charge", "transfer"]);
+  if (info.method == "charge") {
+    this.validator.check(info.name, ["name", "Bitte geben Sie den Kontoinhaber an."]).notEmpty();
+    this.validator.check(info.number, ["number", "Bitte geben Sie eine korrekte Kontonummer an."]).isInt().len(1, 8);
+    this.validator.check(info.blz, ["blz", "Bitte geben Sie eine korrekte Bankleitzahl an."]).isInt().len(8, 8);
+    this.validator.check(info.bank, ["bank", "Bitte geben Sie den Namen der Bank an."]).notEmpty();
+  }
 };
 
 Order.prototype.validateConfirm = function (info, response) {
   if (!info.accepted) response.errors.accepted = "Bitte stimmen Sie den AGB zu.";
 };
 
-Order.prototype.returnErrors = function (response) {
-  if (Object.keys(response.errors).length > 0) return false;
+Order.prototype.returnsErrors = function (response) {
+  if (Object.keys(response.errors).length + this.validator._errors.length > 0) return false;
   return true;
 };
 
