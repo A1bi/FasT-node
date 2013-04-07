@@ -11,9 +11,15 @@ function Order(socket, seats) {
   this.address = {};
   this.placed = false;
   this.validator = new Validator();
+  this.expirationTimer = null;
+  this.expirationTimes = {
+    alertBefore: 60,
+    total: 300
+  };
   
   this.registerEvents();
   this.updateSeats();
+  this.resetExpirationTimer();
 };
 
 Order.prototype.__proto__ = process.EventEmitter.prototype;
@@ -35,13 +41,48 @@ Order.prototype.registerEvents = function () {
 };
 
 Order.prototype.destroy = function () {
-  if (!this.placed) this.releaseSeats();
+  this.killExpirationTimer();
   this.emit("destroyed");
+  if (!this.placed) this.releaseSeats();
   
   console.log("Order destroyed");
 };
 
+Order.prototype.expire = function () {
+  console.log("Order expired");
+  this.socket.emit("expired").disconnect();
+};
+
+Order.prototype.killExpirationTimer = function () {
+  clearTimeout(this.expirationTimer);
+};
+
+Order.prototype.resetExpirationTimer = function () {
+  this.killExpirationTimer();
+  this.setExpirationAlertTimer();
+};
+
+Order.prototype.setExpirationAlertTimer = function () {
+  var _this = this;
+  this.expirationTimer = setTimeout(function () {
+    _this.setExpirationTimer();
+    _this.socket.emit("aboutToExpire", { secondsLeft: _this.expirationTimes.alertBefore });
+    console.log("Order expiration alert");
+    
+  }, (this.expirationTimes.total - this.expirationTimes.alertBefore) * 1000);
+};
+
+Order.prototype.setExpirationTimer = function () {
+  var _this = this;
+  this.expirationTimer = setTimeout(function () {
+    _this.expire();
+    
+  }, this.expirationTimes.alertBefore * 1000);
+};
+
 Order.prototype.update = function (order, callback) {
+  this.resetExpirationTimer();
+  
   var response = {
     ok: true,
     errors: {}
@@ -120,10 +161,14 @@ Order.prototype.place = function () {
       _this.placed = true;
       console.log("Order placed");
     }
+    
+    this.socket.disconnect();
   });
 };
 
 Order.prototype.reserveSeat = function (seatId, callback) {
+  this.resetExpirationTimer();
+
   var seat = this.seats.reserve(seatId, this.date);
   if (seat) {
     this.reservedSeats.push(seat);
