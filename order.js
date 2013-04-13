@@ -7,7 +7,7 @@ function Order(socket, seats) {
   this.seats = seats;
   this.reservedSeats = [];
   this.date = null;
-  this.numbers = {};
+  this.tickets = {};
   this.address = {};
   this.placed = false;
   this.validator = new Validator();
@@ -98,7 +98,7 @@ Order.prototype.update = function (order, callback) {
         this.releaseSeats();
         this.date = info.date;
       }
-      this.numbers = info.numbers;
+      this.tickets = info.tickets;
       this.updateReservedSeats();
     }
     break;
@@ -147,7 +147,7 @@ Order.prototype.place = function () {
   var orderInfo = {
     order: {
       date: this.date,
-      numbers: this.numbers,
+      tickets: this.tickets,
       seats: this.reservedSeats.map(function (seat) {
         return seat.id;
       }),
@@ -162,7 +162,7 @@ Order.prototype.place = function () {
       console.log("Order placed");
     }
     
-    this.socket.disconnect();
+    _this.socket.disconnect();
   });
 };
 
@@ -222,11 +222,11 @@ Order.prototype.releaseSeats = function () {
   this.updatedSeats(this.date, updatedSeats);
 };
 
-Order.prototype.getNumberOfTickets = function (numbers) {
-  numbers = numbers || this.numbers;
+Order.prototype.getNumberOfTickets = function (tickets) {
+  tickets = tickets || this.tickets;
   var number = 0;
-  for (var typeId in numbers) {
-    number += numbers[typeId];
+  for (var typeId in tickets) {
+    number += parseInt(tickets[typeId]);
   }
   return number;
 };
@@ -240,7 +240,7 @@ Order.prototype.validateDate = function (info, response) {
   if (!this.seats.dates[info.date]) {
     response.errors['general'] = "Invalid date";
   }
-  if (this.getNumberOfTickets(info.numbers) < 1) {
+  if (this.getNumberOfTickets(info.tickets) < 1) {
     response.errors['general'] = "Too few tickets";
   }
 };

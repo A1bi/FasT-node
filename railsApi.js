@@ -27,7 +27,7 @@ var railsApi = {
       rejectUnauthorized: false,
       headers: {
         "Content-Type": "application/json",
-        "Content-Length": body.length
+        "Content-Length": Buffer.byteLength(body)
       }
       
     }, function (res) {
