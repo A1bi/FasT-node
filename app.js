@@ -3,7 +3,8 @@ var http = require("http"),
     fs = require("fs");
     
 var seats = require("./seats"),
-    Order = require("./order");
+    Order = require("./order"),
+    Purchase = require("./purchase");
 
 var sockPath = "/tmp/FasT-node.sock";
 if (fs.existsSync(sockPath)) fs.unlinkSync(sockPath);
@@ -17,19 +18,41 @@ var io = socketio.listen(server, {
   "heartbeat interval": 15
 });
 
-var orders = [];
+var clients = [];
 
-io.sockets.on("connection", function (socket) {
-  var order = new Order(socket, seats);
-  orders.push(order);
+function registerNamespace(namespace) {
+  io.of("/" + namespace).on("connection", function (socket) {
+    var clientClass;
+    switch (namespace) {
+      case "order":
+      clientClass = Order;
+      break;
+    
+      case "purchase":
+      clientClass = Purchase;
+      break;
+    
+      default:
+      console.log("invalid namespace");
+      socket.disconnect();
+      return;
+    }
   
-  order.on("updatedSeats", function (dateId, updatedSeats) {
-    orders.forEach(function (o) {
-      o.updateSeats(dateId, updatedSeats);
+    var client = new clientClass(socket, seats);
+    clients.push(client);
+  
+    client.on("updatedSeats", function (dateId, updatedSeats) {
+      clients.forEach(function (c) {
+        c.updateSeats(dateId, updatedSeats);
+      });
+    });
+  
+    client.on("destroyed", function () {
+      clients.splice(clients.indexOf(client), 1);
     });
   });
-  
-  order.on("destroyed", function () {
-    orders.splice(orders.indexOf(order), 1);
-  });
+}
+
+["order", "purchase"].forEach(function (namespace) {
+  registerNamespace(namespace);
 });
