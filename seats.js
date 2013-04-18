@@ -1,8 +1,9 @@
 var railsApi = require("./railsApi");
 
-function Seat(id, r) {
+function Seat(id, r, g) {
   this.id = id;
   this.reserved = r || false;
+  this.grid = g;
   
   this.reserve = function () {
     if (!this.reserved) {
@@ -21,7 +22,8 @@ function Seat(id, r) {
     selected = selected || [];
     return {
       reserved: this.reserved,
-      selected: (selected.indexOf(this) != -1) ? true : false
+      selected: (selected.indexOf(this) != -1) ? true : false,
+      grid: this.grid
     };
   };
 };
@@ -43,7 +45,7 @@ var seats = {
       
           var seat = _this.dates[dateId][seatId];
           if (!seat) {
-            _this.dates[dateId][seatId] = new Seat(seatId, seatInfo.reserved[dateId]);
+            _this.dates[dateId][seatId] = new Seat(seatId, seatInfo.reserved[dateId], seatInfo.grid);
           } else if (seatInfo.reserved[dateId]) {
             seat.reserved = seatInfo.reserved[dateId];
           }
