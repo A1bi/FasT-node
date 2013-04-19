@@ -4,9 +4,9 @@ var EventEmitter = require("events").EventEmitter;
 
 var railsApi = require("./railsApi");
 
-function Client(socket, seats) {
+function Client(socket, event) {
   this.socket = socket;
-  this.seats = seats;
+  this.event = event;
   this.reservedSeats = [];
   this.date = null;
   this.tickets = {};
@@ -19,7 +19,6 @@ function Client(socket, seats) {
   };
   
   this.registerEvents();
-  this.updateSeats();
   this.resetExpirationTimer();
 };
 
@@ -127,7 +126,7 @@ Client.prototype.place = function () {
 Client.prototype.reserveSeat = function (seatId, callback) {
   this.resetExpirationTimer();
 
-  var seat = this.seats.reserve(seatId, this.date);
+  var seat = this.event.seats.reserve(seatId, this.date);
   if (seat) {
     this.reservedSeats.push(seat);
     this.updateReservedSeats(seat);
@@ -136,6 +135,17 @@ Client.prototype.reserveSeat = function (seatId, callback) {
   }
 
   callback({ ok: seat != null, seatId: seatId });
+};
+
+Client.prototype.updateEvent = function () {
+  this.socket.emit("updateEvent", {
+    event: {
+      name: this.event.name,
+      dates: this.event.dates,
+      ticketTypes: this.event.ticketTypes,
+      seats: this.event.seats.getAll(null, true)
+    }
+  });
 };
 
 Client.prototype.updateSeats = function (dateId, seats) {
@@ -148,7 +158,7 @@ Client.prototype.updateSeats = function (dateId, seats) {
     });
   
   } else {
-    updatedSeats = this.seats.getAll();
+    updatedSeats = this.event.seats.getAll();
   }
   
   this.socket.emit("updateSeats", {

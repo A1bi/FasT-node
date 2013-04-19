@@ -2,11 +2,13 @@ var util = require("util");
 
 var Client = require("./client");
 
-function Order(socket, seats) {
+function Order(socket, event) {
   this.address = {};
   this.payment = {};
   
-  Order.super_.call(this, socket, seats);
+  Order.super_.call(this, socket, event);
+  
+  this.updateSeats();
 };
 
 util.inherits(Order, Client);
@@ -34,7 +36,7 @@ Order.prototype.saved = function (response) {
 };
 
 Order.prototype.validateStepDate = function (info, response) {
-  if (!this.seats.dates[info.date]) {
+  if (!this.event.seats.dates[info.date]) {
     response.errors['general'] = "Invalid date";
   }
   if (this.getNumberOfTickets(info.tickets) < 1) {

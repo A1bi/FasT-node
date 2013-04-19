@@ -2,7 +2,7 @@ var http = require("http"),
     socketio = require("socket.io"),
     fs = require("fs");
     
-var seats = require("./seats"),
+var event = require("./event"),
     Order = require("./order"),
     Purchase = require("./purchase");
 
@@ -38,7 +38,7 @@ function registerNamespace(namespace) {
       return;
     }
   
-    var client = new clientClass(socket, seats);
+    var client = new clientClass(socket, event);
     clients.push(client);
   
     client.on("updatedSeats", function (dateId, updatedSeats) {

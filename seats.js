@@ -1,5 +1,3 @@
-var railsApi = require("./railsApi");
-
 function Seat(id, r, g) {
   this.id = id;
   this.reserved = r || false;
@@ -18,42 +16,34 @@ function Seat(id, r, g) {
     this.reserved = false;
   };
   
-  this.forClient = function (selected) {
-    selected = selected || [];
-    return {
-      reserved: this.reserved,
-      selected: (selected.indexOf(this) != -1) ? true : false,
-      grid: this.grid
-    };
+  this.forClient = function (selected, grid) {
+    seat = { reserved: this.reserved };
+    if (selected) seat['selected'] = (selected.indexOf(this) != -1) ? true : false
+    if (grid) seat['grid'] = this.grid;
+    
+    return seat;
   };
 };
 
 var seats = {
   dates: {},
 
-  update: function () {
-    var _this = this;
-    console.log("Updating seats...");
+  update: function (seats) {
+    for (var i in seats) {
+      var seatInfo = seats[i];
+      var seatId = seatInfo.id;
+  
+      for (var dateId in seatInfo.reserved) {
+        this.dates[dateId] = this.dates[dateId] || {};
     
-    railsApi.get("seats", "", function (seats) {
-      for (var i in seats) {
-        var seatInfo = seats[i];
-        var seatId = seatInfo.id;
-    
-        for (var dateId in seatInfo.reserved) {
-          _this.dates[dateId] = _this.dates[dateId] || {};
-      
-          var seat = _this.dates[dateId][seatId];
-          if (!seat) {
-            _this.dates[dateId][seatId] = new Seat(seatId, seatInfo.reserved[dateId], seatInfo.grid);
-          } else if (seatInfo.reserved[dateId]) {
-            seat.reserved = seatInfo.reserved[dateId];
-          }
+        var seat = this.dates[dateId][seatId];
+        if (!seat) {
+          this.dates[dateId][seatId] = new Seat(seatId, seatInfo.reserved[dateId], seatInfo.grid);
+        } else if (seatInfo.reserved[dateId]) {
+          seat.reserved = seatInfo.reserved[dateId];
         }
       }
-  
-      setTimeout(function () { _this.update(); }, 300000);
-    });
+    }
   },
   
   get: function (seatId, dateId) {
@@ -69,25 +59,23 @@ var seats = {
     return null;
   },
   
-  getAll: function (selected) {
+  getAll: function (selected, grid) {
     var seats = {};
     for (var dateId in this.dates) {
-      seats[dateId] = this.getAllOnDate(dateId, selected);
+      seats[dateId] = this.getAllOnDate(dateId, selected, grid);
     }
     
     return seats;
   },
   
-  getAllOnDate: function (dateId, selected) {
+  getAllOnDate: function (dateId, selected, grid) {
     var seats = {};
     for (var seatId in this.dates[dateId]) {
-      seats[seatId] = this.dates[dateId][seatId].forClient(selected);
+      seats[seatId] = this.dates[dateId][seatId].forClient(selected, grid);
     }
     
     return seats;
   }
 };
-
-seats.update();
 
 module.exports = seats;
