@@ -47,6 +47,7 @@ var seats = {
   },
   
   get: function (seatId, dateId) {
+    if (!this.dates[dateId]) return null;
     return this.dates[dateId][seatId];
   },
   

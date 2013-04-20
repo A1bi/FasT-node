@@ -32,25 +32,6 @@ RetailClient.prototype.placedOrder = function (response) {
   this.resetOrder();
 };
 
-RetailClient.prototype.validateStepDate = function (info, response) {
-  if (!this.event.seats.dates[info.date]) {
-    response.errors['general'] = "Invalid date";
-  
-  } else {
-    if (this.date != info.date) {
-      this.releaseSeats();
-      this.date = info.date;
-    }
-    this.updateReservedSeats();
-  }
-};
-
-RetailClient.prototype.validateStepTickets = function (info, response) {
-  if (this.getNumberOfTickets(info.tickets) < 1) {
-    response.errors['general'] = "Too few tickets";
-  }
-};
-
 RetailClient.prototype.validateStepConfirm = function (info, response) {
   
 };

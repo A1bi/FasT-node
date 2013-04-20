@@ -208,8 +208,34 @@ Client.prototype.getNumberOfTickets = function (tickets) {
   return number;
 };
 
+Client.prototype.validateStepDate = function (info, response) {
+  if (!this.event.dates[info.date]) {
+    response.errors['general'] = "Invalid date";
+  
+  } else {
+    if (this.date != info.date) {
+      this.releaseSeats();
+      this.date = info.date;
+    }
+    this.updateReservedSeats();
+  }
+};
+
+Client.prototype.validateStepTickets = function (info, response) {
+  if (this.getNumberOfTickets(info.tickets) < 1) {
+    response.errors['general'] = "Too few tickets";
+  
+  } else {
+    this.tickets = info.tickets;
+  }
+};
+
 Client.prototype.validateStepSeats = function (info, response) {
-  if (this.reservedSeats.length != this.getNumberOfTickets()) {
+  var number = this.getNumberOfTickets();
+  if (number < 1) {
+    response.errors['general'] = "Tickets have yet to be selected";
+    
+  } else if (this.reservedSeats.length != number) {
     // TODO: i18n
     response.errors['general'] = "Die Anzahl der gewählten Sitzplätze stimmt nicht mit der Anzahl Ihrer Tickets überein.";
   }

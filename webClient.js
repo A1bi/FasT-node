@@ -26,7 +26,7 @@ WebClient.prototype.placeOrder = function () {
     }
   };
   
-  RetailClient._super.placeOrder.call(this, "orders", orderInfo);
+  WebClient._super.prototype.placeOrder.call(this, "orders", orderInfo);
 };
 
 WebClient.prototype.placedOrder = function (response) {
@@ -38,21 +38,8 @@ WebClient.prototype.placedOrder = function (response) {
 };
 
 WebClient.prototype.validateStepDate = function (info, response) {
-  if (!this.event.seats.dates[info.date]) {
-    response.errors['general'] = "Invalid date";
-  }
-  if (this.getNumberOfTickets(info.tickets) < 1) {
-    response.errors['general'] = "Too few tickets";
-  }
-  
-  if (this.returnsErrors(response)) {
-    if (this.date != info.date) {
-      this.releaseSeats();
-      this.date = info.date;
-    }
-    this.tickets = info.tickets;
-    this.updateReservedSeats();
-  }
+  WebClient.super_.prototype.validateStepDate.call(this, info, response);
+  WebClient.super_.prototype.validateStepTickets.call(this, info, response);
 };
 
 WebClient.prototype.validateStepAddress = function (info, response) {
