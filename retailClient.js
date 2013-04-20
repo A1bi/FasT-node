@@ -2,19 +2,16 @@ var util = require("util");
 
 var Client = require("./client");
 
-function Purchase(socket, event) {
-  this.address = {};
-  this.payment = {};
-  
-  Purchase.super_.call(this, socket, event);
+function RetailClient(socket, event) {
+  RetailClient.super_.call(this, socket, event);
   
   this.updateEvent();
 };
 
-util.inherits(Purchase, Client);
+util.inherits(RetailClient, Client);
 
-Purchase.prototype.getSerializedInfo = function () {
-  return {
+RetailClient.prototype.placeOrder = function () {
+  var orderInfo = {
     purchase: {
       date: this.date,
       tickets: this.tickets,
@@ -23,15 +20,19 @@ Purchase.prototype.getSerializedInfo = function () {
       })
     }
   };
+  
+  RetailClient._super.placeOrder.call(this, "purchases", orderInfo);
 };
 
-Purchase.prototype.saved = function (response) {
+RetailClient.prototype.placedOrder = function (response) {
   if (response.ok) {
     console.log("Purchase placed");
   }
+  
+  this.resetOrder();
 };
 
-Purchase.prototype.validateStepDate = function (info, response) {
+RetailClient.prototype.validateStepDate = function (info, response) {
   if (!this.event.seats.dates[info.date]) {
     response.errors['general'] = "Invalid date";
   
@@ -44,15 +45,15 @@ Purchase.prototype.validateStepDate = function (info, response) {
   }
 };
 
-Purchase.prototype.validateStepTickets = function (info, response) {
+RetailClient.prototype.validateStepTickets = function (info, response) {
   if (this.getNumberOfTickets(info.tickets) < 1) {
     response.errors['general'] = "Too few tickets";
   }
 };
 
-Purchase.prototype.validateStepConfirm = function (info, response) {
+RetailClient.prototype.validateStepConfirm = function (info, response) {
   
 };
 
 
-module.exports = Purchase;
+module.exports = RetailClient;

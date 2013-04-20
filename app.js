@@ -3,8 +3,8 @@ var http = require("http"),
     fs = require("fs");
     
 var event = require("./event"),
-    Order = require("./order"),
-    Purchase = require("./purchase");
+    WebClient = require("./webClient"),
+    RetailClient = require("./retailClient");
 
 var sockPath = "/tmp/FasT-node.sock";
 if (fs.existsSync(sockPath)) fs.unlinkSync(sockPath);
@@ -18,27 +18,12 @@ var io = socketio.listen(server, {
   "heartbeat interval": 15
 });
 
+var clientClasses = { web: WebClient, retail: RetailClient };
 var clients = [];
 
 function registerNamespace(namespace) {
   io.of("/" + namespace).on("connection", function (socket) {
-    var clientClass;
-    switch (namespace) {
-      case "order":
-      clientClass = Order;
-      break;
-    
-      case "purchase":
-      clientClass = Purchase;
-      break;
-    
-      default:
-      console.log("invalid namespace");
-      socket.disconnect();
-      return;
-    }
-  
-    var client = new clientClass(socket, event);
+    var client = new clientClasses[namespace](socket, event);
     clients.push(client);
   
     client.on("updatedSeats", function (dateId, updatedSeats) {
@@ -53,6 +38,6 @@ function registerNamespace(namespace) {
   });
 }
 
-["order", "purchase"].forEach(function (namespace) {
+for (var namespace in clientClasses) {
   registerNamespace(namespace);
-});
+}

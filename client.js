@@ -10,7 +10,7 @@ function Client(socket, event) {
   this.reservedSeats = [];
   this.date = null;
   this.tickets = {};
-  this.placed = false;
+  this.orderPlaced = false;
   this.validator = new Validator();
   this.expirationTimer = null;
   this.expirationTimes = {
@@ -18,6 +18,7 @@ function Client(socket, event) {
     total: 300
   };
   
+  this.resetOrder();
   this.registerEvents();
   this.resetExpirationTimer();
 };
@@ -36,14 +37,14 @@ Client.prototype.registerEvents = function () {
   });
   
   this.socket.on("updateOrder", function (data, callback) {
-    _this.update(data.order, callback);
+    _this.updateOrder(data.order, callback);
   });
 };
 
 Client.prototype.destroy = function () {
   this.killExpirationTimer();
   this.emit("destroyed");
-  if (!this.placed) this.releaseSeats();
+  if (!this.orderPlaced) this.releaseSeats();
   
   console.log("Order destroyed");
 };
@@ -80,7 +81,7 @@ Client.prototype.setExpirationTimer = function () {
   }, this.expirationTimes.alertBefore * 1000);
 };
 
-Client.prototype.update = function (order, callback) {
+Client.prototype.updateOrder = function (order, callback) {
   this.resetExpirationTimer();
   
   var response = {
@@ -100,7 +101,7 @@ Client.prototype.update = function (order, callback) {
   
   if (this.returnsErrors(response)) {
     if (order.step == "confirm") {
-      this.place();
+      this.placeOrder();
     }
     
   } else {
@@ -113,15 +114,23 @@ Client.prototype.update = function (order, callback) {
   callback(response);
 };
 
-Client.prototype.place = function () {
+Client.prototype.resetOrder = function () {
+  this.reservedSeats = [];
+  this.date = null;
+  this.tickets = {};
+  this.orderPlaced = false;
+};
+
+Client.prototype.placeOrder = function (resource, orderInfo) {
   var _this = this;
-  var orderInfo = this.getSerializedInfo();
   
-  railsApi.post("orders", null, orderInfo, function (response) {
-    _this.placed = true;
-    _this.saved(response);
+  railsApi.post(resource, null, orderInfo, function (response) {
+    _this.orderPlaced = true;
+    _this.placedOrder(response);
   });
 };
+
+Client.prototype.placedOrder = function () {};
 
 Client.prototype.reserveSeat = function (seatId, callback) {
   this.resetExpirationTimer();

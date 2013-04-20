@@ -2,19 +2,19 @@ var util = require("util");
 
 var Client = require("./client");
 
-function Order(socket, event) {
+function WebClient(socket, event) {
   this.address = {};
   this.payment = {};
   
-  Order.super_.call(this, socket, event);
+  WebClient.super_.call(this, socket, event);
   
   this.updateSeats();
 };
 
-util.inherits(Order, Client);
+util.inherits(WebClient, Client);
 
-Order.prototype.getSerializedInfo = function () {
-  return {
+WebClient.prototype.placeOrder = function () {
+  var orderInfo = {
     order: {
       date: this.date,
       tickets: this.tickets,
@@ -25,9 +25,11 @@ Order.prototype.getSerializedInfo = function () {
       payment: this.payment
     }
   };
+  
+  RetailClient._super.placeOrder.call(this, "orders", orderInfo);
 };
 
-Order.prototype.saved = function (response) {
+WebClient.prototype.placedOrder = function (response) {
   if (response.ok) {
     console.log("Order placed");
   }
@@ -35,7 +37,7 @@ Order.prototype.saved = function (response) {
   this.socket.disconnect();
 };
 
-Order.prototype.validateStepDate = function (info, response) {
+WebClient.prototype.validateStepDate = function (info, response) {
   if (!this.event.seats.dates[info.date]) {
     response.errors['general'] = "Invalid date";
   }
@@ -53,7 +55,7 @@ Order.prototype.validateStepDate = function (info, response) {
   }
 };
 
-Order.prototype.validateStepAddress = function (info, response) {
+WebClient.prototype.validateStepAddress = function (info, response) {
   var _this = this;
   ["first_name", "last_name", "phone"].forEach(function (key) {
     _this.validator.check(info[key], [key, "Bitte füllen Sie dieses Feld aus."]).notEmpty();
@@ -68,7 +70,7 @@ Order.prototype.validateStepAddress = function (info, response) {
   }
 };
 
-Order.prototype.validateStepPayment = function (info, response) {
+WebClient.prototype.validateStepPayment = function (info, response) {
   this.validator.check(info.method, ["general", "Invalid payment method"]).isIn(["charge", "transfer"]);
   if (info.method == "charge") {
     this.validator.check(info.name, ["name", "Bitte geben Sie den Kontoinhaber an."]).notEmpty();
@@ -82,9 +84,9 @@ Order.prototype.validateStepPayment = function (info, response) {
   }
 };
 
-Order.prototype.validateStepConfirm = function (info, response) {
+WebClient.prototype.validateStepConfirm = function (info, response) {
   if (!info.accepted) response.errors.accepted = "Bitte stimmen Sie den AGB zu.";
 };
 
 
-module.exports = Order;
+module.exports = WebClient;
