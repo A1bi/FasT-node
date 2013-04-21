@@ -2,8 +2,8 @@ var railsApi = require("./railsApi");
 
 var event = {
   name: null,
-  dates: {},
-  ticketTypes: {},
+  dates: null,
+  ticketTypes: null,
   seats: require("./seats"),
   
   hashProp: function (info, target) {
@@ -21,10 +21,8 @@ var event = {
       _this.dates = eventInfo.dates;
       _this.ticketTypes = eventInfo.ticket_types;
       _this.seats.update(eventInfo.seats);
-  
-      setTimeout(function () { _this.update(); }, 300000);
     });
-  },
+  }
 };
 
 event.update();

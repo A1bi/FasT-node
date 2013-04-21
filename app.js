@@ -1,7 +1,8 @@
 var http = require("http"),
     socketio = require("socket.io"),
     fs = require("fs");
-    
+
+require("./extensions");    
 var event = require("./event"),
     WebClient = require("./webClient"),
     RetailClient = require("./retailClient");

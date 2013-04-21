@@ -99,7 +99,7 @@ Client.prototype.updateOrder = function (order, callback) {
     response.errors['general'] = "Invalid step";
   }
   
-  if (this.returnsErrors(response)) {
+  if (this.returnsNoErrors(response)) {
     if (order.step == "confirm") {
       this.placeOrder();
     }
@@ -203,13 +203,13 @@ Client.prototype.getNumberOfTickets = function (tickets) {
   tickets = tickets || this.tickets;
   var number = 0;
   for (var typeId in tickets) {
-    number += parseInt(tickets[typeId]);
+    number += parseInt(tickets[typeId]) || 0;
   }
   return number;
 };
 
 Client.prototype.validateStepDate = function (info, response) {
-  if (!this.event.dates[info.date]) {
+  if (!this.event.dates.getObjectWithId(info.date)) {
     response.errors['general'] = "Invalid date";
   
   } else if (this.date != info.date) {
@@ -219,12 +219,21 @@ Client.prototype.validateStepDate = function (info, response) {
 };
 
 Client.prototype.validateStepTickets = function (info, response) {
-  if (this.getNumberOfTickets(info.tickets) < 1) {
-    response.errors['general'] = "Too few tickets";
+  for (var typeId in info.tickets) {
+    if (!this.event.ticketTypes.getObjectWithId(typeId)) {
+      response.errors['general'] = "Invalid ticket type";
+      break;
+    }
+  }
   
-  } else {
-    this.tickets = info.tickets;
-    this.updateReservedSeats();
+  if (this.returnsNoErrors(response)) {
+    if (this.getNumberOfTickets(info.tickets) < 1) {
+      response.errors['general'] = "Too few tickets";
+  
+    } else {
+      this.tickets = info.tickets;
+      this.updateReservedSeats();
+    }
   }
 };
 
@@ -239,7 +248,7 @@ Client.prototype.validateStepSeats = function (info, response) {
   }
 };
 
-Client.prototype.returnsErrors = function (response) {
+Client.prototype.returnsNoErrors = function (response) {
   if (Object.keys(response.errors).length + this.validator._errors.length > 0) return false;
   return true;
 };

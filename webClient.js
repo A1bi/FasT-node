@@ -52,7 +52,7 @@ WebClient.prototype.validateStepAddress = function (info, response) {
   this.validator.check(info.plz, ["plz", "Bitte geben Sie eine korrekte Postleitzahl an."]).isInt().len(5, 5);
   this.validator.check(info.email, ["email", "Bitte geben Sie eine korrekte e-mail-Adresse an."]).isEmail();
   
-  if (this.returnsErrors(response)) {
+  if (this.returnsNoErrors(response)) {
     this.address = info;
   }
 };
@@ -66,7 +66,7 @@ WebClient.prototype.validateStepPayment = function (info, response) {
     this.validator.check(info.bank, ["bank", "Bitte geben Sie den Namen der Bank an."]).notEmpty();
   }
   
-  if (this.returnsErrors(response)) {
+  if (this.returnsNoErrors(response)) {
     this.payment = info;
   }
 };
