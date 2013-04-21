@@ -111,7 +111,7 @@ Client.prototype.updateOrder = function (order, callback) {
     response.ok = false;
   }
   
-  callback(response);
+  if (callback) callback(response);
 };
 
 Client.prototype.resetOrder = function () {
@@ -143,7 +143,7 @@ Client.prototype.reserveSeat = function (seatId, callback) {
     console.log("Seat reserved");
   }
 
-  callback({ ok: seat != null, seatId: seatId });
+  if (callback) callback({ ok: seat != null, seatId: seatId });
 };
 
 Client.prototype.updateEvent = function () {
@@ -212,12 +212,9 @@ Client.prototype.validateStepDate = function (info, response) {
   if (!this.event.dates[info.date]) {
     response.errors['general'] = "Invalid date";
   
-  } else {
-    if (this.date != info.date) {
-      this.releaseSeats();
-      this.date = info.date;
-    }
-    this.updateReservedSeats();
+  } else if (this.date != info.date) {
+    this.releaseSeats();
+    this.date = info.date;
   }
 };
 
@@ -227,6 +224,7 @@ Client.prototype.validateStepTickets = function (info, response) {
   
   } else {
     this.tickets = info.tickets;
+    this.updateReservedSeats();
   }
 };
 
