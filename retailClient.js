@@ -3,6 +3,8 @@ var util = require("util");
 var Client = require("./client");
 
 function RetailClient(socket, event) {
+  this.requiredSteps = ["date", "tickets", "seats", "confirm"];
+  
   RetailClient.super_.call(this, socket, event);
   
   this.updateEvent();
@@ -21,7 +23,7 @@ RetailClient.prototype.placeOrder = function () {
     }
   };
   
-  RetailClient._super.placeOrder.call(this, "purchases", orderInfo);
+  RetailClient.super_.placeOrder.call(this, "purchases", orderInfo);
 };
 
 RetailClient.prototype.placedOrder = function (response) {

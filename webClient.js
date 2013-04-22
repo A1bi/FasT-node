@@ -5,6 +5,7 @@ var Client = require("./client");
 function WebClient(socket, event) {
   this.address = {};
   this.payment = {};
+  this.requiredSteps = ["date", "seats", "address", "payment", "confirm"];
   
   WebClient.super_.call(this, socket, event);
   
@@ -26,7 +27,7 @@ WebClient.prototype.placeOrder = function () {
     }
   };
   
-  WebClient._super.prototype.placeOrder.call(this, "orders", orderInfo);
+  WebClient.super_.prototype.placeOrder.call(this, "orders", orderInfo);
 };
 
 WebClient.prototype.placedOrder = function (response) {

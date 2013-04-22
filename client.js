@@ -11,6 +11,7 @@ function Client(socket, event) {
   this.date = null;
   this.tickets = {};
   this.orderPlaced = false;
+  this.remainingSteps = this.requiredSteps.slice(0);
   this.validator = new Validator();
   this.expirationTimer = null;
   this.expirationTimes = {
@@ -82,29 +83,36 @@ Client.prototype.setExpirationTimer = function () {
 };
 
 Client.prototype.updateOrder = function (order, callback) {
-  this.resetExpirationTimer();
-  
   var response = {
     ok: true,
     errors: {}
   };
   var info = order.info;
-  
   this.validator._errors = [];
   
-  var method = "validateStep" + order.step[0].toUpperCase() + order.step.substr(1);
-  if (typeof(this[method]) == "function") {
-    this[method](order.info, response);
-  } else {
+  var validationMethod = "validateStep" + order.step[0].toUpperCase() + order.step.substr(1);
+  if (this.requiredSteps.indexOf(order.step) == -1 || typeof(this[validationMethod]) != "function") {
     response.errors['general'] = "Invalid step";
+  
+  } else {
+    this.resetExpirationTimer();
+  
+    this[validationMethod](order.info, response);
   }
   
   if (this.returnsNoErrors(response)) {
-    if (order.step == "confirm") {
-      this.placeOrder();
-    }
+    this.remainingSteps.splice(this.remainingSteps.indexOf(order.step), 1);
     
-  } else {
+    if (order.step == "confirm") {
+      if (this.remainingSteps.length < 1) {
+        this.placeOrder();
+      } else {
+        response.errors['general'] = "Some steps not finished";
+      }
+    }
+  }
+  
+  if (!this.returnsNoErrors(response)) {
     this.validator._errors.forEach(function (error) {
       response.errors[error[0]] = error[1];
     });
