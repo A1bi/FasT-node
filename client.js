@@ -129,16 +129,18 @@ Client.prototype.resetOrder = function () {
   this.orderPlaced = false;
 };
 
-Client.prototype.placeOrder = function (resource, orderInfo) {
+Client.prototype.placeOrder = function (orderInfo) {
   var _this = this;
   
-  railsApi.post(resource, null, orderInfo, function (response) {
+  railsApi.post("orders", null, orderInfo, function (response) {
     _this.orderPlaced = true;
     _this.placedOrder(response);
   });
 };
 
-Client.prototype.placedOrder = function () {};
+Client.prototype.placedOrder = function () {
+  console.log("Order placed");
+};
 
 Client.prototype.reserveSeat = function (seatId, callback) {
   this.resetExpirationTimer();

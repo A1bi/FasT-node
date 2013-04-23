@@ -4,6 +4,7 @@ var Client = require("./client");
 
 function RetailClient(socket, event) {
   this.requiredSteps = ["date", "tickets", "seats", "confirm"];
+  this.retailId = socket.handshake.query.retailId;
   
   RetailClient.super_.call(this, socket, event);
   
@@ -14,7 +15,8 @@ util.inherits(RetailClient, Client);
 
 RetailClient.prototype.placeOrder = function () {
   var orderInfo = {
-    purchase: {
+    retailId: this.retailId,
+    order: {
       date: this.date,
       tickets: this.tickets,
       seats: this.reservedSeats.map(function (seat) {
@@ -23,14 +25,10 @@ RetailClient.prototype.placeOrder = function () {
     }
   };
   
-  RetailClient.super_.placeOrder.call(this, "purchases", orderInfo);
+  RetailClient.super_.prototype.placeOrder.call(this, orderInfo);
 };
 
 RetailClient.prototype.placedOrder = function (response) {
-  if (response.ok) {
-    console.log("Purchase placed");
-  }
-  
   this.resetOrder();
 };
 

@@ -27,14 +27,10 @@ WebClient.prototype.placeOrder = function () {
     }
   };
   
-  WebClient.super_.prototype.placeOrder.call(this, "orders", orderInfo);
+  WebClient.super_.prototype.placeOrder.call(this, orderInfo);
 };
 
 WebClient.prototype.placedOrder = function (response) {
-  if (response.ok) {
-    console.log("Order placed");
-  }
-  
   this.socket.disconnect();
 };
 

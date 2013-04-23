@@ -23,7 +23,7 @@ var clientClasses = { web: WebClient, retail: RetailClient };
 var clients = [];
 
 function registerNamespace(namespace) {
-  io.of("/" + namespace).on("connection", function (socket) {
+  io.of("/" + namespace).on("connection", function (socket, data) {
     var client = new clientClasses[namespace](socket, event);
     clients.push(client);
   
