@@ -29,6 +29,8 @@ RetailClient.prototype.placeOrder = function () {
 };
 
 RetailClient.prototype.placedOrder = function (response) {
+  RetailClient.super_.prototype.placedOrder.call(this, response);
+  
   this.resetOrder();
 };
 

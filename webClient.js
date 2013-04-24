@@ -31,6 +31,8 @@ WebClient.prototype.placeOrder = function () {
 };
 
 WebClient.prototype.placedOrder = function (response) {
+  WebClient.super_.prototype.placedOrder.call(this, response);
+  
   this.socket.disconnect();
 };
 

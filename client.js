@@ -131,15 +131,34 @@ Client.prototype.resetOrder = function () {
 
 Client.prototype.placeOrder = function (orderInfo) {
   var _this = this;
+  if (this.orderPlaced) return;
+  this.orderPlaced = true;
   
   railsApi.post("orders", null, orderInfo, function (response) {
-    _this.orderPlaced = true;
     _this.placedOrder(response);
   });
 };
 
-Client.prototype.placedOrder = function () {
-  console.log("Order placed");
+Client.prototype.placedOrder = function (response) {
+  var clientResponse;
+  if (response.ok) {
+    console.log("Order placed");
+    
+    clientResponse = {
+      ok: true,
+      order: response.order
+    }
+  
+  } else {
+    clientResponse = {
+      ok: false,
+      errors: {
+        general: "unknown error"
+      }
+    }
+  }
+  
+  this.socket.emit("orderPlaced", clientResponse);
 };
 
 Client.prototype.reserveSeat = function (seatId, callback) {
