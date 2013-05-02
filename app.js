@@ -4,14 +4,11 @@ var http = require("http"),
 
 require("./extensions");    
 var event = require("./event"),
+    PushApi = require("./pushApi"),
     WebClient = require("./webClient"),
     RetailClient = require("./retailClient");
 
-var sockPath = "/tmp/FasT-node.sock";
-if (fs.existsSync(sockPath)) fs.unlinkSync(sockPath);
-
-var server = http.Server().listen(sockPath);
-fs.chmod(sockPath, "0777");
+var server = http.Server().listenToSocket("/tmp/FasT-node.sock");
     
 var io = socketio.listen(server, {
   "close timeout": 30,
@@ -42,3 +39,6 @@ function registerNamespace(namespace) {
 for (var namespace in clientClasses) {
   registerNamespace(namespace);
 }
+
+
+var api = new PushApi(clients);

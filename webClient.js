@@ -1,18 +1,18 @@
 var util = require("util");
 
-var Client = require("./client");
+var OrderClient = require("./orderClient");
 
 function WebClient(socket, event) {
   this.address = {};
   this.payment = {};
   this.requiredSteps = ["date", "seats", "address", "payment", "confirm"];
   
-  WebClient.super_.call(this, socket, event);
+  WebClient.super_.call(this, socket, event, "web");
   
   this.updateSeats();
 };
 
-util.inherits(WebClient, Client);
+util.inherits(WebClient, OrderClient);
 
 WebClient.prototype.placeOrder = function () {
   var orderInfo = {

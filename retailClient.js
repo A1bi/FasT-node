@@ -1,17 +1,17 @@
 var util = require("util");
 
-var Client = require("./client");
+var OrderClient = require("./orderClient");
 
 function RetailClient(socket, event) {
   this.requiredSteps = ["date", "tickets", "seats", "confirm"];
   this.retailId = socket.handshake.query.retailId;
   
-  RetailClient.super_.call(this, socket, event);
+  RetailClient.super_.call(this, socket, event, "retail", this.retailId);
   
   this.updateEvent();
 };
 
-util.inherits(RetailClient, Client);
+util.inherits(RetailClient, OrderClient);
 
 RetailClient.prototype.placeOrder = function () {
   var orderInfo = {
