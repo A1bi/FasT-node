@@ -7,8 +7,6 @@ function RetailClient(socket, event) {
   this.retailId = socket.handshake.query.retailId;
   
   RetailClient.super_.call(this, socket, event, "retail", this.retailId);
-  
-  this.updateEvent();
 };
 
 util.inherits(RetailClient, OrderClient);

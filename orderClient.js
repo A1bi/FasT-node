@@ -23,6 +23,8 @@ function OrderClient(socket, event, clientType, clientId) {
   this.resetOrder();
   this.registerEvents();
   this.resetExpirationTimer();
+  
+  this.updateSeats();
 };
 
 util.inherits(OrderClient, Client);
@@ -166,17 +168,6 @@ OrderClient.prototype.reserveSeat = function (seatId, callback) {
   }
 
   if (callback) callback({ ok: seat != null, seatId: seatId });
-};
-
-OrderClient.prototype.updateEvent = function () {
-  this.socket.emit("updateEvent", {
-    event: {
-      name: this.event.name,
-      dates: this.event.dates,
-      ticketTypes: this.event.ticketTypes,
-      seats: this.event.seats.getAll(null, true)
-    }
-  });
 };
 
 OrderClient.prototype.updateSeats = function (dateId, seats) {

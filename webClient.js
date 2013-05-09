@@ -8,8 +8,6 @@ function WebClient(socket, event) {
   this.requiredSteps = ["date", "seats", "address", "payment", "confirm"];
   
   WebClient.super_.call(this, socket, event, "web");
-  
-  this.updateSeats();
 };
 
 util.inherits(WebClient, OrderClient);
