@@ -5,6 +5,8 @@ function Client(socket, clientType, clientId) {
   this.socket = socket;
   this.type = clientType || null;
   this.id = clientId || null;
+  
+  console.log("new client of type '" + clientType + "'");
 };
 
 util.inherits(Client, EventEmitter);
