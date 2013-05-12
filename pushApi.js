@@ -26,11 +26,15 @@ PushApi.prototype.init = function () {
     res.end();
     
     var params = req.body;
+    var clientsPushedTo = 0;
     _this.clients.forEach(function (client) {
       if (params.recipients.indexOf(client.type) != -1 && ((params.recipientId && params.recipientIds.indexOf(client.id) != -1) || !params.recipientId)) {
         client.push(params.action, params.info);
+        clientsPushedTo++;
       }
     });
+    
+    console.log("Pushed message with action '" + params.action + "' to " + clientsPushedTo + " clients");
   });
   
   http.createServer(this.api).listenToSocket("/tmp/FasT-node-api.sock");

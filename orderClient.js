@@ -21,7 +21,6 @@ function OrderClient(socket, event, clientType, clientId) {
   OrderClient.super_.call(this, socket, clientType, clientId);
   
   this.resetOrder();
-  this.registerEvents();
   this.resetExpirationTimer();
   
   this.updateSeats();
@@ -32,9 +31,7 @@ util.inherits(OrderClient, Client);
 OrderClient.prototype.registerEvents = function () {
   var _this = this;
   
-  this.socket.on("disconnect", function () {
-    _this.destroy();
-  });
+  OrderClient.super_.prototype.registerEvents.call(this);
   
   this.socket.on("reserveSeat", function (data, callback) {
     _this.reserveSeat(data.seatId, callback);
@@ -46,8 +43,9 @@ OrderClient.prototype.registerEvents = function () {
 };
 
 OrderClient.prototype.destroy = function () {
+  OrderClient.super_.prototype.destroy.call(this);
+  
   this.killExpirationTimer();
-  this.emit("destroyed");
   if (!this.orderPlaced) this.releaseSeats();
   
   console.log("Order destroyed");

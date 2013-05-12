@@ -6,10 +6,24 @@ function Client(socket, clientType, clientId) {
   this.type = clientType || null;
   this.id = clientId || null;
   
-  console.log("new client of type '" + clientType + "'");
+  this.registerEvents();
+  
+  console.log("New client of type '" + clientType + "'");
 };
 
 util.inherits(Client, EventEmitter);
+
+Client.prototype.registerEvents = function () {
+  var _this = this;
+  this.socket.on("disconnect", function () {
+    _this.destroy();
+  });
+};
+
+Client.prototype.destroy = function () {
+  this.emit("destroyed");
+  console.log("Client disconnected");
+};
 
 Client.prototype.push = function (action, data) {
   this.socket.emit(action, data);

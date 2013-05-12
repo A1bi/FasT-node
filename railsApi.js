@@ -31,10 +31,10 @@ var railsApi = {
       }
       
     }, function (res) {
-      var data = [];
+      var data = "";
       
       res.on("data", function (d) {
-        data.push(d);
+        data += d;
       });
       
       res.on("end", function () {
