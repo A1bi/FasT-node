@@ -141,17 +141,16 @@ OrderClient.prototype.placeOrder = function (orderInfo) {
 };
 
 OrderClient.prototype.placedOrder = function (response) {
-  var clientResponse = { ok: response.ok || false };
-  if (response.ok) {
+  if (response.ok === true) {
     console.log("Order placed");
   
   } else {
     this.releaseSeats();
     
-    clientResponse['errors']['general'] = "unknown error";
+    response = { ok: false, errors: { general: "unknown error" } }
   }
   
-  this.socket.emit("orderPlaced", clientResponse);
+  this.socket.emit("orderPlaced", response);
 };
 
 OrderClient.prototype.reserveSeat = function (seatId, callback) {
