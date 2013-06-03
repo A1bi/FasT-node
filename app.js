@@ -27,7 +27,9 @@ function registerNamespace(namespace) {
   
     client.on("updatedSeats", function (dateId, updatedSeats) {
       clients.forEach(function (c) {
-        c.updateSeats(dateId, updatedSeats);
+        if (typeof(c.updateSeats) == 'function') {
+          c.updateSeats(dateId, updatedSeats);
+        }
       });
     });
   
