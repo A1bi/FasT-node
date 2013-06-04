@@ -46,14 +46,14 @@ OrderClient.prototype.destroy = function () {
   OrderClient.super_.prototype.destroy.call(this);
   
   this.killExpirationTimer();
-  if (!this.orderPlaced) this.releaseSeats();
+  this.resetOrder();
   
   console.log("Order destroyed");
 };
 
 OrderClient.prototype.expire = function () {
   console.log("Order expired");
-  this.socket.emit("expired").disconnect();
+  this.socket.emit("expired");
 };
 
 OrderClient.prototype.killExpirationTimer = function () {
@@ -124,6 +124,8 @@ OrderClient.prototype.updateOrder = function (order, callback) {
 };
 
 OrderClient.prototype.resetOrder = function () {
+  if (!this.orderPlaced) this.releaseSeats();
+  
   this.reservedSeats = [];
   this.date = null;
   this.tickets = {};
@@ -145,10 +147,12 @@ OrderClient.prototype.placedOrder = function (response) {
     console.log("Order placed");
   
   } else {
-    this.releaseSeats();
+    this.orderPlaced = false;
     
     response = { ok: false, errors: { general: "unknown error" } }
   }
+  
+  this.resetOrder();
   
   this.socket.emit("orderPlaced", response);
 };

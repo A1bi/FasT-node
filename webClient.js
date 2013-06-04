@@ -12,6 +12,11 @@ function WebClient(socket, event) {
 
 util.inherits(WebClient, OrderClient);
 
+WebClient.prototype.expire = function () {
+  WebClient.super_.prototype.expire.call(this);
+  this.socket.disconnect();
+};
+
 WebClient.prototype.placeOrder = function () {
   var orderInfo = {
     order: {

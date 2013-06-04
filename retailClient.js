@@ -11,6 +11,11 @@ function RetailClient(socket, event) {
 
 util.inherits(RetailClient, OrderClient);
 
+RetailClient.prototype.expire = function () {
+  RetailClient.super_.prototype.expire.call(this);
+  this.resetOrder();
+};
+
 RetailClient.prototype.placeOrder = function () {
   var orderInfo = {
     retailId: this.retailId,
