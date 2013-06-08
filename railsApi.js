@@ -1,6 +1,6 @@
 var https = require("https");
 
-var apiHost = "127.0.0.1";
+var apiHost = (process.env.NODE_ENV == "production") ? "theater-kaisersesch.de" : "127.0.0.1";
 
 var railsApi = {
   get: function (resource, action, callback) {
