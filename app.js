@@ -12,9 +12,7 @@ var event = require("./event"),
 var server = http.Server().listenToSocket("/tmp/FasT-node.sock");
     
 var io = socketio.listen(server, {
-  "close timeout": 30,
-  "heartbeat timeout": 30,
-  "heartbeat interval": 15
+  "transports": ["websocket", "xhr-polling", "jsonp-polling"]
 });
 
 var clientClasses = { web: WebClient, retail: RetailClient, "retail-checkout": RetailCheckoutClient };
