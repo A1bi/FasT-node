@@ -62,8 +62,10 @@ WebClient.prototype.validateStepAddress = function (info, response) {
 WebClient.prototype.validateStepPayment = function (info, response) {
   this.validator.check(info.method, ["general", "Invalid payment method"]).isIn(["charge", "transfer"]);
   if (info.method == "charge") {
+    info.number = this.getNumberFromString(info.number);
+    info.blz = this.getNumberFromString(info.blz);
     this.validator.check(info.name, ["name", "Bitte geben Sie den Kontoinhaber an."]).notEmpty();
-    this.validator.check(info.number, ["number", "Bitte geben Sie eine korrekte Kontonummer an."]).isInt().len(1, 8);
+    this.validator.check(info.number, ["number", "Bitte geben Sie eine korrekte Kontonummer an."]).isInt().len(1, 12);
     this.validator.check(info.blz, ["blz", "Bitte geben Sie eine korrekte Bankleitzahl an."]).isInt().len(8, 8);
     this.validator.check(info.bank, ["bank", "Bitte geben Sie den Namen der Bank an."]).notEmpty();
   }

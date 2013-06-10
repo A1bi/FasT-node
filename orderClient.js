@@ -267,6 +267,10 @@ OrderClient.prototype.returnsNoErrors = function (response) {
   return true;
 };
 
+OrderClient.prototype.getNumberFromString = function (string) {
+  return string.replace(/[^\d]/g, "");
+};
+
 
 Validator.prototype.error = function (error) {
   this._errors.push(error);
