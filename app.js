@@ -12,7 +12,9 @@ var event = require("./event"),
 var server = http.Server().listenToSocket("/tmp/FasT-node.sock");
     
 var io = socketio.listen(server, {
-  "transports": ["websocket", "xhr-polling", "jsonp-polling"]
+  "transports": ["websocket", "xhr-polling"],
+  "resource": "/node",
+  "match origin protocol": true
 });
 
 var clientClasses = { web: WebClient, retail: RetailClient, "retail-checkout": RetailCheckoutClient };
