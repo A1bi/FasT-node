@@ -10,6 +10,7 @@ function OrderClient(socket, event, clientType, clientId) {
   this.date = null;
   this.tickets = {};
   this.orderPlaced = false;
+  this.aborted = false;
   this.remainingSteps = this.requiredSteps.slice(0);
   this.validator = new Validator();
   this.expirationTimer = null;
@@ -34,10 +35,12 @@ OrderClient.prototype.registerEvents = function () {
   OrderClient.super_.prototype.registerEvents.call(this);
   
   this.socket.on("reserveSeat", function (data, callback) {
+    if (_this.aborted) return;
     _this.reserveSeat(data.seatId, callback);
   });
   
   this.socket.on("updateOrder", function (data, callback) {
+    if (_this.aborted) return;
     _this.updateOrder(data.order, callback);
   });
 };
@@ -45,6 +48,7 @@ OrderClient.prototype.registerEvents = function () {
 OrderClient.prototype.destroy = function () {
   OrderClient.super_.prototype.destroy.call(this);
   
+  this.aborted = true;
   this.killExpirationTimer();
   this.resetOrder();
   
@@ -136,6 +140,7 @@ OrderClient.prototype.placeOrder = function (orderInfo) {
   var _this = this;
   if (this.orderPlaced) return;
   this.orderPlaced = true;
+  this.killExpirationTimer();
   
   railsApi.post("orders", null, orderInfo, function (response) {
     _this.placedOrder(response);

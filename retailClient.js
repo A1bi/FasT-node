@@ -7,9 +7,26 @@ function RetailClient(socket, event) {
   this.retailId = socket.handshake.query.retailId;
   
   RetailClient.super_.call(this, socket, event, "retail", this.retailId);
+  
+  this.expirationTimes = {
+    alertBefore: 45,
+    total: 180
+  };
 };
 
 util.inherits(RetailClient, OrderClient);
+
+RetailClient.prototype.registerEvents = function () {
+  var _this = this;
+  
+  RetailClient.super_.prototype.registerEvents.call(this);
+  
+  this.socket.on("resetOrder", function (data, callback) {
+    _this.resetOrder();
+    _this.resetExpirationTimer();
+    _this.aborted = false;
+  });
+};
 
 RetailClient.prototype.expire = function () {
   RetailClient.super_.prototype.expire.call(this);
