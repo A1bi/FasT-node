@@ -54,6 +54,14 @@ RetailClient.prototype.placedOrder = function (response) {
   this.resetOrder();
 };
 
+RetailClient.prototype.resetOrder = function () {
+  var date = this.date, selectedSeats = this.reservedSeats;
+  
+  RetailClient.super_.prototype.resetOrder.call(this);
+  
+  this.updatedSeats(date, selectedSeats);
+};
+
 RetailClient.prototype.validateStepConfirm = function (info, response) {
   
 };
