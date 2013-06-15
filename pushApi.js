@@ -28,7 +28,7 @@ PushApi.prototype.init = function () {
     var params = req.body;
     var clientsPushedTo = 0;
     _this.clients.forEach(function (client) {
-      if (params.recipients.indexOf(client.type) != -1 && ((params.recipientId && params.recipientIds.indexOf(client.id) != -1) || !params.recipientId)) {
+      if (params.recipients.indexOf(client.type) != -1 && ((params.recipientIds && params.recipientIds.indexOf(client.id) != -1) || !params.recipientIds)) {
         client.push(params.action, params.info);
         clientsPushedTo++;
       }
