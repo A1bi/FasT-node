@@ -26,7 +26,8 @@ WebClient.prototype.placeOrder = function () {
         return seat.id;
       }),
       address: this.address,
-      payment: this.payment
+      payment: this.payment,
+      newsletter: this.newsletter
     }
   };
   
@@ -77,6 +78,10 @@ WebClient.prototype.validateStepPayment = function (info, response) {
 
 WebClient.prototype.validateStepConfirm = function (info, response) {
   if (!info.accepted) response.errors.accepted = "Bitte stimmen Sie den AGB zu.";
+  
+  if (this.returnsNoErrors(response)) {
+    this.newsletter = info.newsletter;
+  }
 };
 
 

@@ -14,7 +14,8 @@ var server = http.Server().listenToSocket("/tmp/FasT-node.sock");
 var io = socketio.listen(server, {
   "transports": ["websocket", "xhr-polling"],
   "resource": "/node",
-  "match origin protocol": true
+  "match origin protocol": true,
+  "browser client minification": true
 });
 
 var clientClasses = { web: WebClient, retail: RetailClient, "retail-checkout": RetailCheckoutClient };
