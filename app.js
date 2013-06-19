@@ -6,7 +6,8 @@ require("./extensions");
 var event = require("./event"),
     PushApi = require("./pushApi"),
     WebClient = require("./webClient"),
-    RetailClient = require("./retailClient"),
+    RetailAppClient = require("./retailAppClient"),
+    RetailWebClient = require("./retailWebClient"),
     RetailCheckoutClient = require("./retailCheckoutClient");
 
 var server = http.Server().listenToSocket("/tmp/FasT-node.sock");
@@ -18,7 +19,7 @@ var io = socketio.listen(server, {
   "browser client minification": true
 });
 
-var clientClasses = { web: WebClient, retail: RetailClient, "retail-checkout": RetailCheckoutClient };
+var clientClasses = { "web": WebClient, "retail": RetailAppClient, "retail-web": RetailWebClient, "retail-checkout": RetailCheckoutClient };
 var clients = [];
 
 function registerNamespace(namespace) {

@@ -1,12 +1,12 @@
-var util = require("util");
+var util = require("util"),
+    extend = require("node.extend");
 
 var OrderClient = require("./orderClient");
 
-function RetailClient(socket, event) {
-  this.requiredSteps = ["date", "tickets", "seats", "confirm"];
+function RetailClient(socket, event, type) {
   this.retailId = socket.handshake.query.retailId;
   
-  RetailClient.super_.call(this, socket, event, "retail", this.retailId);
+  RetailClient.super_.call(this, socket, event, type, this.retailId);
   
   this.expirationTimes = {
     alertBefore: 45,
@@ -16,25 +16,9 @@ function RetailClient(socket, event) {
 
 util.inherits(RetailClient, OrderClient);
 
-RetailClient.prototype.registerEvents = function () {
-  var _this = this;
-  
-  RetailClient.super_.prototype.registerEvents.call(this);
-  
-  this.socket.on("resetOrder", function (data, callback) {
-    _this.resetOrder();
-    _this.resetExpirationTimer();
-    _this.aborted = false;
-  });
-};
-
-RetailClient.prototype.expire = function () {
-  RetailClient.super_.prototype.expire.call(this);
-  this.resetOrder();
-};
-
-RetailClient.prototype.placeOrder = function () {
-  var orderInfo = {
+RetailClient.prototype.placeOrder = function (orderInfo) {
+  orderInfo = orderInfo || {};
+  extend(true, orderInfo, {
     retailId: this.retailId,
     order: {
       date: this.date,
@@ -43,23 +27,9 @@ RetailClient.prototype.placeOrder = function () {
         return seat.id;
       })
     }
-  };
+  });
   
   RetailClient.super_.prototype.placeOrder.call(this, orderInfo);
-};
-
-RetailClient.prototype.placedOrder = function (response) {
-  RetailClient.super_.prototype.placedOrder.call(this, response);
-  
-  this.resetOrder();
-};
-
-RetailClient.prototype.resetOrder = function () {
-  var date = this.date, selectedSeats = this.reservedSeats;
-  
-  RetailClient.super_.prototype.resetOrder.call(this);
-  
-  this.updatedSeats(date, selectedSeats);
 };
 
 RetailClient.prototype.validateStepConfirm = function (info, response) {

@@ -106,7 +106,10 @@ OrderClient.prototype.updateOrder = function (order, callback) {
   }
   
   if (this.returnsNoErrors(response)) {
-    this.remainingSteps.splice(this.remainingSteps.indexOf(order.step), 1);
+    var stepIndex = this.remainingSteps.indexOf(order.step);
+    if (stepIndex != -1) {
+      this.remainingSteps.splice(this.remainingSteps.indexOf(order.step), 1);
+    }
     
     if (order.step == "confirm") {
       if (this.remainingSteps.length < 1) {
