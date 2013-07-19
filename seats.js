@@ -1,10 +1,18 @@
-function Seat(id, r) {
+var railsApi = require("./railsApi");
+
+
+function Seat(id, t) {
   this.id = id;
-  this.reserved = r || false;
+  this.chosen = false;
+  this.taken = t || false;
   
-  this.reserve = function () {
-    if (!this.reserved) {
-      this.reserved = true;
+  this.available = function (exclusive) {
+    return (!this.taken && !this.chosen) || (!!exclusive && exclusive.includes(this));
+  }
+  
+  this.choose = function (exclusive) {
+    if (this.available(exclusive)) {
+      this.chosen = true;
       return true;
     }
     
@@ -12,69 +20,70 @@ function Seat(id, r) {
   };
   
   this.release = function () {
-    this.reserved = false;
+    this.chosen = false;
   };
   
-  this.forClient = function (selected) {
-    seat = { reserved: this.reserved };
-    if (selected) seat['selected'] = (selected.indexOf(this) != -1) ? true : false
+  this.forClient = function (exclusive, chosen) {
+    seat = { available: this.available(exclusive) };
+    if (chosen) seat['chosen'] = chosen.includes(this);
     
     return seat;
   };
 };
 
-var seats = {
-  dates: {},
 
-  update: function (seats) {
-    for (var i in seats) {
-      var seatInfo = seats[i];
-      var seatId = seatInfo.id;
-  
-      for (var dateId in seatInfo.reserved) {
-        this.dates[dateId] = this.dates[dateId] || {};
+exports.update = function (seats) {
+  for (var dateId in seats) {
+    var dateSeats = seats[dateId];
+    dates[dateId] = dates[dateId] || {};
     
-        var seat = this.dates[dateId][seatId];
-        if (!seat) {
-          this.dates[dateId][seatId] = new Seat(seatId, seatInfo.reserved[dateId]);
-        } else if (seatInfo.reserved[dateId]) {
-          seat.reserved = seatInfo.reserved[dateId];
-        }
+    for (var seatId in dateSeats) {
+      var seatInfo = dateSeats[seatId];
+      var seat = dates[dateId][seatId];
+      if (!seat) {
+        dates[dateId][seatId] = new Seat(seatId, !seatInfo.available);
+      } else {
+        seat.taken = !seatInfo.available
       }
     }
-  },
-  
-  get: function (seatId, dateId) {
-    if (!this.dates[dateId]) return null;
-    return this.dates[dateId][seatId];
-  },
-  
-  reserve: function (seatId, dateId) {
-    var seat = this.get(seatId, dateId);
-    if (seat && seat.reserve()) {
-      return seat;
-    }
-    
-    return null;
-  },
-  
-  getAll: function (selected) {
-    var seats = {};
-    for (var dateId in this.dates) {
-      seats[dateId] = this.getAllOnDate(dateId, selected);
-    }
-    
-    return seats;
-  },
-  
-  getAllOnDate: function (dateId, selected) {
-    var seats = {};
-    for (var seatId in this.dates[dateId]) {
-      seats[seatId] = this.dates[dateId][seatId].forClient(selected);
-    }
-    
-    return seats;
   }
 };
 
-module.exports = seats;
+exports.get = function (seatId, dateId) {
+  if (!dates[dateId]) return null;
+  return dates[dateId][seatId];
+};
+
+exports.choose = function (seatId, dateId, exclusive) {
+  var seat = this.get(seatId, dateId);
+  if (seat && seat.choose(exclusive)) {
+    return seat;
+  }
+  
+  return null;
+};
+
+exports.getAll = function (exclusive, chosen) {
+  var seats = {};
+  for (var dateId in dates) {
+    seats[dateId] = this.getAllOnDate(dateId, exclusive, chosen);
+  }
+  
+  return seats;
+};
+
+exports.getAllOnDate = function (dateId, exclusive, chosen) {
+  var seats = {};
+  for (var seatId in dates[dateId]) {
+    seats[seatId] = dates[dateId][seatId].forClient(exclusive, chosen);
+  }
+  
+  return seats;
+};
+
+var dates = {};
+  
+console.log("Updating seats...");
+railsApi.get("seats", "", function (seatsInfo) {
+  exports.update(seatsInfo.seats);
+});

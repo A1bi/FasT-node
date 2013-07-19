@@ -12,6 +12,10 @@ Array.prototype.getObjectWithId = function (id) {
   return obj;
 };
 
+Array.prototype.includes = function (obj) {
+  return (this.indexOf(obj) != -1) ? true : false;
+};
+
 Server.prototype.listenToSocket = function (sockPath) {
   if (fs.existsSync(sockPath)) fs.unlinkSync(sockPath);
   this.listen(sockPath);

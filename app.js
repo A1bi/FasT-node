@@ -3,11 +3,9 @@ var http = require("http"),
     fs = require("fs");
 
 require("./extensions");    
-var event = require("./event"),
-    PushApi = require("./pushApi"),
-    WebClient = require("./webClient"),
-    RetailAppClient = require("./retailAppClient"),
-    RetailWebClient = require("./retailWebClient"),
+var seats = require("./seats"),
+    api = require("./railsApi"),
+    SeatingClient = require("./seatingClient"),
     RetailCheckoutClient = require("./retailCheckoutClient");
 
 var server = http.Server().listenToSocket("/tmp/FasT-node.sock");
@@ -19,12 +17,14 @@ var io = socketio.listen(server, {
   "browser client minification": true
 });
 
-var clientClasses = { "web": WebClient, "retail": RetailAppClient, "retail-web": RetailWebClient, "retail-checkout": RetailCheckoutClient };
+var clientClasses = { "seating": SeatingClient, "retail-checkout": RetailCheckoutClient };
 var clients = [];
+
+api.init(clients);
 
 function registerNamespace(namespace) {
   io.of("/" + namespace).on("connection", function (socket, data) {
-    var client = new clientClasses[namespace](socket, event);
+    var client = new clientClasses[namespace](socket, seats);
     clients.push(client);
   
     client.on("updatedSeats", function (dateId, updatedSeats) {
@@ -44,6 +44,3 @@ function registerNamespace(namespace) {
 for (var namespace in clientClasses) {
   registerNamespace(namespace);
 }
-
-
-var api = new PushApi(clients);

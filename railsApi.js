@@ -1,59 +1,139 @@
-var https = require("https");
+var http = require("http"),
+    https = require("https"),
+    connect = require("connect"),
+    util = require("util"),
+    fs = require("fs");
 
-var apiHost = (process.env.NODE_ENV == "production") ? "theater-kaisersesch.de" : "127.0.0.1";
-
-var railsApi = {
-  get: function (resource, action, callback) {
-    this.requestOnResource(resource, action, "GET", null, callback);
-  },
-  
-  post: function (resource, action, data, callback) {
-    this.requestOnResource(resource, action, "POST", data, callback);
-  },
-  
-  requestOnResource: function (resource, action, method, data, callback) {
-    this.request(resource + ((action) ? "/" + action : ""), method, data, function (data) {
-      callback(data);
-    });
-  },
-  
-  request: function (path, method, data, callback) {
-    var body = JSON.stringify(data || {});
-    
-    var req = https.request({
-      hostname: apiHost,
-      method: method,
-      path: "/api/" + path,
-      rejectUnauthorized: false,
-      headers: {
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(body)
-      }
-      
-    }, function (res) {
-      var data = "";
-      
-      res.on("data", function (d) {
-        data += d;
-      });
-      
-      res.on("end", function () {
-        try {
-          callback(JSON.parse(data));
-        } catch (error) {
-          console.log(error);
-          callback({});
-        }
-      });
-    
-    }).on("error", function (error) {
-      console.log(error);      
-    });
-    
-    req.write(body);
-    
-    req.end();
-  }
+var sockets = {
+  "node": "/tmp/FasT-node-api.sock",
+  "rails": "/tmp/unicorn.FasT.sock"
 };
 
-module.exports = railsApi;
+
+http.ServerResponse.prototype.sendJSONResponse = function () {
+  this.end(JSON.stringify(this.response));
+};
+
+
+var instance = null;
+
+function RailsApi() {
+  this.api = connect();
+  
+  this.init();
+};
+
+RailsApi.prototype.init = function (clients) {
+  var _this = this;
+  this.clients = clients;
+  
+  this.api.use(connect.json());
+  this.api.use(function (req, res, next) {
+    res.setHeader("Content-Type", "application/json");
+    res.response = { ok: true };
+    next();
+  });
+
+  this.api.use("/push", function (req, res) {
+    res.sendJSONResponse();
+    
+    var params = req.body;
+    var clientsPushedTo = 0;
+    _this.clients.forEach(function (client) {
+      if (params.recipients.indexOf(client.type) != -1 && ((params.recipientIds && params.recipientIds.indexOf(client.id) != -1) || !params.recipientIds)) {
+        client.push(params.action, params.info);
+        clientsPushedTo++;
+      }
+    });
+    
+    console.log("Pushed message with action '" + params.action + "' to " + clientsPushedTo + " clients");
+  });
+  
+  this.api.use("/seating", function (req, res) {
+    var params = req.body;
+    if (params.action == "getChosenSeats") {
+      _this.clients.forEach(function (client) {
+        if (client.type == "seating" && params.clientId == client.id) {
+          res.response.seats = client.chosenSeats.map(function (s) { return s.id; });
+        }
+      });
+      if (!res.response.seats) {
+        res.response.ok = false;
+        res.response.error = "unknown client";
+      }
+      
+    } else {
+      res.response.ok = false;
+      res.response.error = "unknown action";
+    }
+    
+    res.sendJSONResponse();
+  });
+  
+  http.createServer(this.api).listenToSocket(sockets.node);
+};
+
+RailsApi.prototype.get = function (resource, action, callback) {
+  this.requestOnResource(resource, action, "GET", null, callback);
+};
+
+RailsApi.prototype.post = function (resource, action, data, callback) {
+  this.requestOnResource(resource, action, "POST", data, callback);
+};
+
+RailsApi.prototype.requestOnResource = function (resource, action, method, data, callback) {
+  this.request(resource + ((action) ? "/" + action : ""), method, data, function (data) {
+    callback(data);
+  });
+};
+
+RailsApi.prototype.request = function (path, method, data, callback) {
+  var body = JSON.stringify(data || {});
+  
+  var options = {
+    method: method,
+    path: "/api/" + path,
+    rejectUnauthorized: false,
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Length": Buffer.byteLength(body)
+    } 
+  };
+  
+  var protocol = http;
+  if (process.env.NODE_ENV == "production") {
+    options['socketPath'] = sockets.rails;
+  } else {
+    options['hostname'] = "127.0.0.1";
+    protocol = https;
+  }
+  
+  var req = protocol.request(options, function (res) {
+    var data = "";
+    
+    res.on("data", function (d) {
+      data += d;
+    });
+    
+    res.on("end", function () {
+      try {
+        callback(JSON.parse(data));
+      } catch (error) {
+        console.log(error);
+        callback({});
+      }
+    });
+  
+  }).on("error", function (error) {
+    console.log(error);      
+  });
+  
+  req.write(body);
+  
+  req.end();
+};
+
+module.exports = function () {
+  if (!instance) instance = new RailsApi();
+  return instance;
+}();
