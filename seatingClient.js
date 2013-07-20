@@ -6,19 +6,20 @@ var Client = require("./client"),
 
 function SeatingClient(socket, seats) {
   this.seats = seats;
-  this.chosenSeats = [];
-  this.exclusiveSeats = [];
-  this.numberOfSeats = 0;
-  this.date = null;
-  this.aborted = false;
+  this.chosenSeats;
+  this.exclusiveSeats;
+  this.numberOfSeats;
+  this.date;
   this.expirationTimer = null;
-  this.expirationTime = 600;
+  this.expirationTime = 900;
+  this.expired;
+  
+  this.init();
   
   var id = crypto.randomBytes(12).toString("hex");
   SeatingClient.super_.call(this, socket, "seating", id);
   this.socket.emit("gotSeatingId", { id: id });
   
-  this.setExpirationTimer();
   this.updateSeats();
 };
 
@@ -26,28 +27,48 @@ util.inherits(SeatingClient, Client);
 
 SeatingClient.prototype.registerEvents = function () {
   var _this = this;
-  
   SeatingClient.super_.prototype.registerEvents.call(this);
   
   this.socket.on("chooseSeat", function (data, callback) {
-    if (_this.aborted) return;
     _this.chooseSeat(data.seatId, callback);
   });
   
   this.socket.on("setDateAndNumberOfSeats", function (data) {
-    if (!data) return;
+    if (!data || _this.expired) return;
     _this.setDateAndNumberOfSeats(data.date, data.numberOfSeats);
+  });
+  
+  this.socket.on("reset", function () {
+    _this.reset();
   });
 };
 
 SeatingClient.prototype.destroy = function () {
   SeatingClient.super_.prototype.destroy.call(this);
   
-  this.aborted = true;
   this.killExpirationTimer();
+  this.releaseSeats();
+};
+
+SeatingClient.prototype.init = function () {
+  this.chosenSeats = [];
+  this.exclusiveSeats = [];
+  this.numberOfSeats = 0;
+  this.date = null;
+  this.expired = false;
+  this.setExpirationTimer();
+};
+
+SeatingClient.prototype.reset = function () {
+  this.releaseSeats();
+  this.init();
 };
 
 SeatingClient.prototype.expire = function () {
+  this.reset();
+  this.killExpirationTimer();
+  this.expired = true;
+  
   console.log("Seating session expired");
   this.socket.emit("expired");
 };
@@ -58,6 +79,7 @@ SeatingClient.prototype.killExpirationTimer = function () {
 
 SeatingClient.prototype.setExpirationTimer = function () {
   var _this = this;
+  this.killExpirationTimer();
   this.expirationTimer = setTimeout(function () {
     _this.expire();
     

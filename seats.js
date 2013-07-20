@@ -7,7 +7,7 @@ function Seat(id, t) {
   this.taken = t || false;
   
   this.available = function (exclusive) {
-    return (!this.taken && !this.chosen) || (!!exclusive && exclusive.includes(this));
+    return !this.taken && !this.chosen && (!exclusive || exclusive.includes(this));
   }
   
   this.choose = function (exclusive) {
