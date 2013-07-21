@@ -2,7 +2,8 @@ var http = require("http"),
     https = require("https"),
     connect = require("connect"),
     util = require("util"),
-    fs = require("fs");
+    fs = require("fs"),
+    EventEmitter = require("events").EventEmitter;
 
 var sockets = {
   "node": "/tmp/FasT-node-api.sock",
@@ -22,6 +23,8 @@ function RailsApi() {
   
   this.init();
 };
+
+util.inherits(RailsApi, EventEmitter);
 
 RailsApi.prototype.init = function (clients) {
   var _this = this;
@@ -61,6 +64,9 @@ RailsApi.prototype.init = function (clients) {
         res.response.ok = false;
         res.response.error = "unknown client";
       }
+      
+    } else if (params.action == "updateSeats") {
+      _this.emit("updateSeats", params.seats);
       
     } else {
       res.response.ok = false;

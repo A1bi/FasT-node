@@ -22,18 +22,18 @@ var clients = [];
 
 api.init(clients);
 
+seats.on("updatedSeats", function (updatedSeats) {
+  clients.forEach(function (c) {
+    if (typeof(c.updateSeats) == 'function') {
+      c.updateSeats(updatedSeats);
+    }
+  });
+});
+
 function registerNamespace(namespace) {
   io.of("/" + namespace).on("connection", function (socket, data) {
-    var client = new clientClasses[namespace](socket, seats);
+    var client = new clientClasses[namespace](socket);
     clients.push(client);
-  
-    client.on("updatedSeats", function (dateId, updatedSeats) {
-      clients.forEach(function (c) {
-        if (typeof(c.updateSeats) == 'function') {
-          c.updateSeats(dateId, updatedSeats);
-        }
-      });
-    });
   
     client.on("destroyed", function () {
       clients.splice(clients.indexOf(client), 1);

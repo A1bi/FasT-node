@@ -2,10 +2,10 @@ var util = require("util"),
     crypto = require('crypto');
 
 var Client = require("./client"),
-    railsApi = require("./railsApi");
+    railsApi = require("./railsApi"),
+    allSeats = require("./seats");
 
-function SeatingClient(socket, seats) {
-  this.seats = seats;
+function SeatingClient(socket) {
   this.chosenSeats;
   this.exclusiveSeats;
   this.numberOfSeats;
@@ -18,9 +18,9 @@ function SeatingClient(socket, seats) {
   
   var id = crypto.randomBytes(12).toString("hex");
   SeatingClient.super_.call(this, socket, "seating", id);
-  this.socket.emit("gotSeatingId", { id: id });
   
   this.updateSeats();
+  this.socket.emit("gotSeatingId", { id: id });
 };
 
 util.inherits(SeatingClient, Client);
@@ -33,9 +33,10 @@ SeatingClient.prototype.registerEvents = function () {
     _this.chooseSeat(data.seatId, callback);
   });
   
-  this.socket.on("setDateAndNumberOfSeats", function (data) {
+  this.socket.on("setDateAndNumberOfSeats", function (data, callback) {
     if (!data || _this.expired) return;
     _this.setDateAndNumberOfSeats(data.date, data.numberOfSeats);
+    callback();
   });
   
   this.socket.on("reset", function () {
@@ -98,7 +99,7 @@ SeatingClient.prototype.setDateAndNumberOfSeats = function (date, number) {
 
 SeatingClient.prototype.chooseSeat = function (seatId, callback) {
   if (this.date && this.numberOfSeats > 0) {
-    var seat = this.seats.choose(seatId, this.date);
+    var seat = allSeats.choose(seatId, this.date);
     if (seat) {
       this.chosenSeats.push(seat);
       this.updateChosenSeats(seat);
@@ -110,17 +111,14 @@ SeatingClient.prototype.chooseSeat = function (seatId, callback) {
   if (callback) callback({ ok: seat != null, seatId: seatId });
 };
 
-SeatingClient.prototype.updateSeats = function (dateId, seats) {
-  var updatedSeats = {}, _this = this;
-  
-  if (dateId) {
+SeatingClient.prototype.updateSeats = function (seats) {
+  seats = seats || allSeats.getAll();
+  var updatedSeats = {};
+  for (var dateId in seats) {
     updatedSeats[dateId] = {};
-    seats.forEach(function (seat) {
-      updatedSeats[dateId][seat.id] = seat.forClient(_this.exclusiveSeats, _this.chosenSeats);
-    });
-  
-  } else {
-    updatedSeats = this.seats.getAll();
+    for (var seatId in seats[dateId]) {
+      updatedSeats[dateId][seatId] = seats[dateId][seatId].forClient(this.exclusiveSeats, this.chosenSeats);
+    }
   }
   
   this.socket.emit("updateSeats", {
@@ -134,12 +132,7 @@ SeatingClient.prototype.updateChosenSeats = function (addToUpdated) {
     seat.release();
   });
   if (addToUpdated) updatedSeats.push(addToUpdated);
-  this.updatedSeats(this.date, updatedSeats);
-};
-
-SeatingClient.prototype.updatedSeats = function (dateId, updatedSeats) {
-  if (updatedSeats.length < 1) return;
-  this.emit("updatedSeats", dateId, updatedSeats);
+  allSeats.updatedSeats(updatedSeats);
 };
 
 SeatingClient.prototype.releaseSeats = function () {
@@ -149,7 +142,7 @@ SeatingClient.prototype.releaseSeats = function () {
   });
   this.chosenSeats.length = 0;
   
-  this.updatedSeats(this.date, updatedSeats);
+  allSeats.updatedSeats(updatedSeats);
 };
 
 

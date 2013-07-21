@@ -1,17 +1,22 @@
+var util = require("util"),
+    EventEmitter = require("events").EventEmitter;
+
 var railsApi = require("./railsApi");
 
 
-function Seat(id, t) {
+function Seat(id, d, t, e) {
   this.id = id;
+  this.date = d;
   this.chosen = false;
   this.taken = t || false;
+  this.exclusive = e || false;
   
-  this.available = function (exclusive) {
-    return !this.taken && !this.chosen && (!exclusive || exclusive.includes(this));
+  this.available = function (exclusives) {
+    return !this.taken && !this.chosen && (!this.exclusive || (exclusives && exclusives.includes(this)));
   }
   
-  this.choose = function (exclusive) {
-    if (this.available(exclusive)) {
+  this.choose = function (exclusives) {
+    if (this.available(exclusives)) {
       this.chosen = true;
       return true;
     }
@@ -23,8 +28,8 @@ function Seat(id, t) {
     this.chosen = false;
   };
   
-  this.forClient = function (exclusive, chosen) {
-    seat = { available: this.available(exclusive) };
+  this.forClient = function (exclusives, chosen) {
+    seat = { available: this.available(exclusives) };
     if (chosen) seat['chosen'] = chosen.includes(this);
     
     return seat;
@@ -32,58 +37,80 @@ function Seat(id, t) {
 };
 
 
-exports.update = function (seats) {
+var instance = null;
+
+function Seats() {
+  this.dates = {};
+  var _this = this;
+  
+  railsApi.on("updateSeats", function (seats) {
+    _this.update(seats);
+  });
+  
+  railsApi.get("seats", "", function (seatsInfo) {
+    _this.update(seatsInfo.seats);
+  });
+}
+
+util.inherits(Seats, EventEmitter);
+
+Seats.prototype.update = function (seats) {
+  console.log("Updating seats from Rails...");
+  
+  var updatedSeats = [];
   for (var dateId in seats) {
     var dateSeats = seats[dateId];
-    dates[dateId] = dates[dateId] || {};
+    this.dates[dateId] = this.dates[dateId] || {};
     
     for (var seatId in dateSeats) {
       var seatInfo = dateSeats[seatId];
-      var seat = dates[dateId][seatId];
+      var seat = this.dates[dateId][seatId];
       if (!seat) {
-        dates[dateId][seatId] = new Seat(seatId, !seatInfo.available);
+        seat = new Seat(seatId, dateId, !seatInfo.available, seatInfo.reserved);
+        this.dates[dateId][seatId] = seat;
       } else {
-        seat.taken = !seatInfo.available
+        seat.taken = !seatInfo.available;
+        seat.exclusive = seatInfo.reserved;
       }
+      updatedSeats.push(seat);
     }
   }
+  
+  this.updatedSeats(updatedSeats);
 };
 
-exports.get = function (seatId, dateId) {
-  if (!dates[dateId]) return null;
-  return dates[dateId][seatId];
+Seats.prototype.updatedSeats = function (seats) {
+  if (seats.length < 1) return;
+  
+  var updatedSeats = {};
+  seats.forEach(function (seat) {
+    updatedSeats[seat.date] = updatedSeats[seat.date] || {};
+    updatedSeats[seat.date][seat.id] = seat;
+  });
+  
+  this.emit("updatedSeats", updatedSeats);
 };
 
-exports.choose = function (seatId, dateId, exclusive) {
+Seats.prototype.get = function (seatId, dateId) {
+  if (!this.dates[dateId]) return null;
+  return this.dates[dateId][seatId];
+};
+
+Seats.prototype.choose = function (seatId, dateId, exclusives) {
   var seat = this.get(seatId, dateId);
-  if (seat && seat.choose(exclusive)) {
+  if (seat && seat.choose(exclusives)) {
     return seat;
   }
   
   return null;
 };
 
-exports.getAll = function (exclusive, chosen) {
-  var seats = {};
-  for (var dateId in dates) {
-    seats[dateId] = this.getAllOnDate(dateId, exclusive, chosen);
-  }
-  
-  return seats;
+Seats.prototype.getAll = function () {
+  return this.dates;
 };
 
-exports.getAllOnDate = function (dateId, exclusive, chosen) {
-  var seats = {};
-  for (var seatId in dates[dateId]) {
-    seats[seatId] = dates[dateId][seatId].forClient(exclusive, chosen);
-  }
-  
-  return seats;
-};
 
-var dates = {};
-  
-console.log("Updating seats...");
-railsApi.get("seats", "", function (seatsInfo) {
-  exports.update(seatsInfo.seats);
-});
+module.exports = function () {
+  if (!instance) instance = new Seats();
+  return instance;
+}();
