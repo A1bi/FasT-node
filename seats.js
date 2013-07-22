@@ -29,8 +29,9 @@ function Seat(id, d, t, e) {
   };
   
   this.forClient = function (exclusives, chosen) {
-    seat = { available: this.available(exclusives) };
-    if (chosen) seat['chosen'] = chosen.includes(this);
+    seat = {};
+    if (!this.available(exclusives)) seat.t = true;
+    if (!this.taken && chosen && chosen.includes(this)) seat.c = true;
     
     return seat;
   };
