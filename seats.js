@@ -11,9 +11,13 @@ function Seat(id, d, t, e) {
   this.taken = t || false;
   this.exclusive = e || false;
   
+  this.inExclusives = function (exclusives) {
+    return exclusives && exclusives.includes(this);
+  };
+  
   this.available = function (exclusives) {
-    return !this.taken && !this.chosen && (!this.exclusive || (exclusives && exclusives.includes(this)));
-  }
+    return !this.taken && !this.chosen && (!this.exclusive || this.inExclusives(exclusives));
+  };
   
   this.choose = function (exclusives) {
     if (this.available(exclusives)) {
@@ -32,6 +36,7 @@ function Seat(id, d, t, e) {
     seat = {};
     if (!this.available(exclusives)) seat.t = true;
     if (!this.taken && chosen && chosen.includes(this)) seat.c = true;
+    if (this.inExclusives(exclusives)) seat.e = true;
     
     return seat;
   };
@@ -82,14 +87,7 @@ Seats.prototype.update = function (seats) {
 
 Seats.prototype.updatedSeats = function (seats) {
   if (seats.length < 1) return;
-  
-  var updatedSeats = {};
-  seats.forEach(function (seat) {
-    updatedSeats[seat.date] = updatedSeats[seat.date] || {};
-    updatedSeats[seat.date][seat.id] = seat;
-  });
-  
-  this.emit("updatedSeats", updatedSeats);
+  this.emit("updatedSeats", seats);
 };
 
 Seats.prototype.get = function (seatId, dateId) {
@@ -107,7 +105,13 @@ Seats.prototype.choose = function (seatId, dateId, exclusives) {
 };
 
 Seats.prototype.getAll = function () {
-  return this.dates;
+  var seats = [];
+  for (var dateId in this.dates) {
+    for (var seatId in this.dates[dateId]) {
+      seats.push(this.dates[dateId][seatId]);
+    }
+  }
+  return seats;
 };
 
 

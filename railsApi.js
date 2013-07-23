@@ -53,24 +53,36 @@ RailsApi.prototype.init = function (clients) {
   });
   
   this.api.use("/seating", function (req, res) {
-    var params = req.body;
-    if (params.action == "getChosenSeats") {
-      _this.clients.forEach(function (client) {
-        if (client.type == "seating" && params.clientId == client.id) {
-          res.response.seats = client.chosenSeats.map(function (s) { return s.id; });
+    var params = req.body, client;
+    
+    if (params.clientId) {
+      _this.clients.forEach(function (c) {
+        if (c.type == "seating" && params.clientId == c.id) {
+          client = c;
+          return;
         }
       });
-      if (!res.response.seats) {
+      
+      if (!client) {
         res.response.ok = false;
         res.response.error = "unknown client";
       }
+    }
+    
+    if (res.response.ok) {
+      if (params.action == "getChosenSeats") {
+        res.response.seats = client.chosenSeats.map(function (s) { return s.id; });
       
-    } else if (params.action == "updateSeats") {
-      _this.emit("updateSeats", params.seats);
+      } else if (params.action == "setExclusiveSeats") {
+        client.setExclusiveSeats(params.seats);
       
-    } else {
-      res.response.ok = false;
-      res.response.error = "unknown action";
+      } else if (params.action == "updateSeats") {
+        _this.emit("updateSeats", params.seats);
+      
+      } else {
+        res.response.ok = false;
+        res.response.error = "unknown action";
+      }
     }
     
     res.sendJSONResponse();

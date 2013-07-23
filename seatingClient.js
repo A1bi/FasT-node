@@ -99,7 +99,7 @@ SeatingClient.prototype.setDateAndNumberOfSeats = function (date, number) {
 
 SeatingClient.prototype.chooseSeat = function (seatId, callback) {
   if (this.date && this.numberOfSeats > 0) {
-    var seat = allSeats.choose(seatId, this.date);
+    var seat = allSeats.choose(seatId, this.date, this.exclusiveSeats);
     if (seat) {
       this.chosenSeats.push(seat);
       this.updateChosenSeats(seat);
@@ -113,13 +113,11 @@ SeatingClient.prototype.chooseSeat = function (seatId, callback) {
 
 SeatingClient.prototype.updateSeats = function (seats) {
   seats = seats || allSeats.getAll();
-  var updatedSeats = {};
-  for (var dateId in seats) {
-    updatedSeats[dateId] = {};
-    for (var seatId in seats[dateId]) {
-      updatedSeats[dateId][seatId] = seats[dateId][seatId].forClient(this.exclusiveSeats, this.chosenSeats);
-    }
-  }
+  var updatedSeats = {}, _this = this;
+  seats.forEach(function (seat) {
+    updatedSeats[seat.date] = updatedSeats[seat.date] || {};
+    updatedSeats[seat.date][seat.id] = seat.forClient(_this.exclusiveSeats, _this.chosenSeats);
+  });
   
   this.socket.emit("updateSeats", {
     seats: updatedSeats
@@ -133,6 +131,21 @@ SeatingClient.prototype.updateChosenSeats = function (addToUpdated) {
   });
   if (addToUpdated) updatedSeats.push(addToUpdated);
   allSeats.updatedSeats(updatedSeats);
+};
+
+SeatingClient.prototype.setExclusiveSeats = function (seats) {
+  var updatedSeats = this.exclusiveSeats.slice(0), _this = this;
+  this.exclusiveSeats = [];
+  
+  for (var dateId in seats) {
+    seats[dateId].forEach(function (seatId) {
+      var seat = allSeats.get(seatId, dateId);
+      _this.exclusiveSeats.push(seat);
+      updatedSeats.push(seat);
+    });
+  }
+  
+  this.updateSeats(updatedSeats); 
 };
 
 SeatingClient.prototype.releaseSeats = function () {
