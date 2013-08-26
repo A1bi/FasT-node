@@ -5,9 +5,10 @@ var Client = require("./client"),
     railsApi = require("./railsApi"),
     allSeats = require("./seats");
 
-function SeatingClient(socket) {
+function SeatingClient(socket, sessionInfo) {
   this.chosenSeats;
   this.exclusiveSeats;
+  this.originalSeats;
   this.numberOfSeats;
   this.date;
   this.expirationTimer = null;
@@ -19,11 +20,22 @@ function SeatingClient(socket) {
   var id = crypto.randomBytes(12).toString("hex");
   SeatingClient.super_.call(this, socket, "seating", id);
   
-  this.updateSeats();
-  this.socket.emit("gotSeatingId", { id: id });
+  sessionInfo = sessionInfo || {};
+  if (sessionInfo.originalSeats) {
+    this.setOriginalSeats(sessionInfo.originalSeats);
+  }
+  
+  this.setSocket(socket);
 };
 
 util.inherits(SeatingClient, Client);
+
+SeatingClient.prototype.setSocket = function (socket) {
+  if (!socket) return;
+  this.socket = socket;
+  this.updateSeats();
+  this.socket.emit("gotSeatingId", { id: id });
+};
 
 SeatingClient.prototype.registerEvents = function () {
   var _this = this;
@@ -54,6 +66,7 @@ SeatingClient.prototype.destroy = function () {
 SeatingClient.prototype.init = function () {
   this.chosenSeats = [];
   this.exclusiveSeats = [];
+  this.originalSeats = [];
   this.numberOfSeats = 0;
   this.date = null;
   this.expired = false;
@@ -99,7 +112,7 @@ SeatingClient.prototype.setDateAndNumberOfSeats = function (date, number) {
 
 SeatingClient.prototype.chooseSeat = function (seatId, callback) {
   if (this.date && this.numberOfSeats > 0) {
-    var seat = allSeats.choose(seatId, this.date, this.exclusiveSeats);
+    var seat = allSeats.choose(seatId, this.date, this.exclusiveSeats, this.originalSeats);
     if (seat) {
       this.chosenSeats.push(seat);
       this.updateChosenSeats(seat);
@@ -116,7 +129,7 @@ SeatingClient.prototype.updateSeats = function (seats) {
   var updatedSeats = {}, _this = this;
   seats.forEach(function (seat) {
     updatedSeats[seat.date] = updatedSeats[seat.date] || {};
-    updatedSeats[seat.date][seat.id] = seat.forClient(_this.exclusiveSeats, _this.chosenSeats);
+    updatedSeats[seat.date][seat.id] = seat.forClient(_this.exclusiveSeats, _this.chosenSeats, _this.originalSeats);
   });
   
   this.socket.emit("updateSeats", {
@@ -133,19 +146,29 @@ SeatingClient.prototype.updateChosenSeats = function (addToUpdated) {
   allSeats.updatedSeats(updatedSeats);
 };
 
+SeatingClient.prototype.getChosenSeats = function () {
+  return this.chosenSeats.map(function (seat) {
+    return seat.id;
+  });
+};
+
+SeatingClient.prototype.setOriginalSeats = function (seats) {
+  this.originalSeats = [];
+  this.iterateSeats(seats, function (seat) {
+    this.originalSeats.push(seat);
+  });
+};
+
 SeatingClient.prototype.setExclusiveSeats = function (seats) {
-  var updatedSeats = this.exclusiveSeats.slice(0), _this = this;
+  var updatedSeats = this.exclusiveSeats.slice(0);
   this.exclusiveSeats = [];
   
-  for (var dateId in seats) {
-    seats[dateId].forEach(function (seatId) {
-      var seat = allSeats.get(seatId, dateId);
-      _this.exclusiveSeats.push(seat);
-      updatedSeats.push(seat);
-    });
-  }
+  this.iterateSeats(seats, function (seat) {
+    this.exclusiveSeats.push(seat);
+    updatedSeats.push(seat);
+  });
   
-  this.updateSeats(updatedSeats); 
+  this.updateSeats(updatedSeats);
 };
 
 SeatingClient.prototype.releaseSeats = function () {
@@ -156,6 +179,16 @@ SeatingClient.prototype.releaseSeats = function () {
   this.chosenSeats.length = 0;
   
   allSeats.updatedSeats(updatedSeats);
+};
+
+SeatingClient.prototype.iterateSeats = function (seats, callback) {
+  var _this = this;
+  for (var dateId in seats) {
+    seats[dateId].forEach(function (seatId) {
+      var seat = allSeats.get(seatId, dateId);
+      callback.call(_this, seat);
+    });
+  }
 };
 
 

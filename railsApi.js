@@ -71,13 +71,21 @@ RailsApi.prototype.init = function (clients) {
     
     if (res.response.ok) {
       if (params.action == "getChosenSeats") {
-        res.response.seats = client.chosenSeats.map(function (s) { return s.id; });
+        res.response.seats = client.getChosenSeats();
+        
+      } else if (params.action == "setChosenSeats") {
+        
       
       } else if (params.action == "setExclusiveSeats") {
         client.setExclusiveSeats(params.seats);
       
       } else if (params.action == "updateSeats") {
         _this.emit("updateSeats", params.seats);
+      
+      } else if (params.action == "initSeatingSession") {
+        _this.emit("initSeatingSession", params.session, function (seatingId) {
+          res.response.seatingId = seatingId;
+        });
       
       } else {
         res.response.ok = false;

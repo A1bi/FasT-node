@@ -11,16 +11,16 @@ function Seat(id, d, t, e) {
   this.taken = t || false;
   this.exclusive = e || false;
   
-  this.inExclusives = function (exclusives) {
-    return exclusives && exclusives.includes(this);
+  this.inCollection = function (collection) {
+    return collection && collection.includes(this);
   };
   
-  this.available = function (exclusives) {
-    return !this.taken && !this.chosen && (!this.exclusive || this.inExclusives(exclusives));
+  this.available = function (exclusives, originals) {
+    return this.inCollection(originals) || (!this.taken && !this.chosen && (!this.exclusive || this.inCollection(exclusives)));
   };
   
-  this.choose = function (exclusives) {
-    if (this.available(exclusives)) {
+  this.choose = function (exclusives, originals) {
+    if (this.available(exclusives, originals)) {
       this.chosen = true;
       return true;
     }
@@ -32,11 +32,11 @@ function Seat(id, d, t, e) {
     this.chosen = false;
   };
   
-  this.forClient = function (exclusives, chosen) {
+  this.forClient = function (exclusives, chosen, originals) {
     seat = {};
-    if (!this.available(exclusives)) seat.t = true;
+    if (!this.available(exclusives, originals)) seat.t = true;
     if (!this.taken && chosen && chosen.includes(this)) seat.c = true;
-    if (this.inExclusives(exclusives)) seat.e = true;
+    if (this.inCollection(exclusives)) seat.e = true;
     
     return seat;
   };
@@ -95,9 +95,9 @@ Seats.prototype.get = function (seatId, dateId) {
   return this.dates[dateId][seatId];
 };
 
-Seats.prototype.choose = function (seatId, dateId, exclusives) {
+Seats.prototype.choose = function (seatId, dateId, exclusives, originals) {
   var seat = this.get(seatId, dateId);
-  if (seat && seat.choose(exclusives)) {
+  if (seat && seat.choose(exclusives, originals)) {
     return seat;
   }
   
