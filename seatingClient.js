@@ -17,8 +17,8 @@ function SeatingClient(socket, sessionInfo) {
   
   this.init();
   
-  var id = crypto.randomBytes(12).toString("hex");
-  SeatingClient.super_.call(this, socket, "seating", id);
+  this.id = crypto.randomBytes(12).toString("hex");
+  SeatingClient.super_.call(this, socket, "seating", this.id);
   
   sessionInfo = sessionInfo || {};
   if (sessionInfo.originalSeats) {
@@ -34,7 +34,7 @@ SeatingClient.prototype.setSocket = function (socket) {
   if (!socket) return;
   this.socket = socket;
   this.updateSeats();
-  this.socket.emit("gotSeatingId", { id: id });
+  this.socket.emit("gotSeatingId", { id: this.id });
 };
 
 SeatingClient.prototype.registerEvents = function () {

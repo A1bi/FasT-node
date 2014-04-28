@@ -45,7 +45,7 @@ function initSession(type, socket, session) {
 
 function registerNamespace(namespace) {
   io.of("/" + namespace).on("connection", function (socket, data) {
-    if (data.seatingClient) {
+    if (data && data.seatingClient) {
       data.seatingClient.setSocket(socket);
     } else {
       initSession(namespace, socket);
