@@ -5,8 +5,7 @@ var http = require("http"),
 require("./extensions");    
 var seats = require("./seats"),
     api = require("./railsApi"),
-    SeatingClient = require("./seatingClient"),
-    RetailCheckoutClient = require("./retailCheckoutClient");
+    SeatingClient = require("./seatingClient");
 
 var server = http.Server().listenToSocket("/tmp/FasT-node.sock");
     
@@ -17,7 +16,7 @@ var io = socketio.listen(server, {
   "browser client minification": true
 });
 
-var clientClasses = { "seating": SeatingClient, "retail-checkout": RetailCheckoutClient };
+var clientClasses = { "seating": SeatingClient };
 var clients = [];
 
 api.init(clients);

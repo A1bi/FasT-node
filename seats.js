@@ -53,7 +53,8 @@ function Seats() {
     _this.update(seats);
   });
   
-  railsApi.get("seats", "", function (seatsInfo) {
+  railsApi.get("seats", "availability", function (seatsInfo) {
+    console.log("Initializing seats, fetching info from Rails...");
     _this.update(seatsInfo.seats);
   });
 }
@@ -61,8 +62,6 @@ function Seats() {
 util.inherits(Seats, EventEmitter);
 
 Seats.prototype.update = function (seats) {
-  console.log("Updating seats from Rails...");
-  
   var updatedSeats = [];
   for (var dateId in seats) {
     var dateSeats = seats[dateId];
@@ -81,6 +80,7 @@ Seats.prototype.update = function (seats) {
       updatedSeats.push(seat);
     }
   }
+  console.log("Updated " + updatedSeats.length + " seats successfully.");
   
   this.updatedSeats(updatedSeats);
 };
