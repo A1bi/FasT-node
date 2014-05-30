@@ -78,8 +78,12 @@ RailsApi.prototype.init = function (clients) {
       
       } else if (params.action == "setExclusiveSeats") {
         client.setExclusiveSeats(params.seats);
+        
+      } else if (params.action == "setOriginalSeats") {
+        client.setOriginalSeats(params.seats);
       
       } else if (params.action == "updateSeats") {
+        console.log("Received seat update from Rails.");
         _this.emit("updateSeats", params.seats);
       
       } else if (params.action == "initSeatingSession") {

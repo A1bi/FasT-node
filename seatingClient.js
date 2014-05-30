@@ -103,11 +103,19 @@ SeatingClient.prototype.setExpirationTimer = function () {
 SeatingClient.prototype.setDateAndNumberOfSeats = function (date, number) {
   if (this.date != date) {
     this.releaseSeats();
+    var _this = this;
+    var updatedSeats = [];
+    this.originalSeats.forEach(function (seat) {
+      if (seat.date == date) {
+        _this.chosenSeats.push(seat);
+        updatedSeats.push(seat);
+      }
+    });
     this.date = date;
   }
   this.numberOfSeats = number;
   
-  this.updateChosenSeats();
+  this.updateChosenSeats(updatedSeats);
 };
 
 SeatingClient.prototype.chooseSeat = function (seatId, callback) {
@@ -115,7 +123,7 @@ SeatingClient.prototype.chooseSeat = function (seatId, callback) {
     var seat = allSeats.choose(seatId, this.date, this.exclusiveSeats, this.originalSeats);
     if (seat) {
       this.chosenSeats.push(seat);
-      this.updateChosenSeats(seat);
+      this.updateChosenSeats([seat]);
     
       console.log("Seat chosen");
     }
@@ -142,7 +150,7 @@ SeatingClient.prototype.updateChosenSeats = function (addToUpdated) {
   updatedSeats.forEach(function (seat) {
     seat.release();
   });
-  if (addToUpdated) updatedSeats.push(addToUpdated);
+  if (addToUpdated) updatedSeats = updatedSeats.concat(addToUpdated);
   allSeats.updatedSeats(updatedSeats);
 };
 
@@ -153,10 +161,15 @@ SeatingClient.prototype.getChosenSeats = function () {
 };
 
 SeatingClient.prototype.setOriginalSeats = function (seats) {
+  var updatedSeats = [];
   this.originalSeats = [];
+  this.chosenSeats = [];
   this.iterateSeats(seats, function (seat) {
     this.originalSeats.push(seat);
+    this.chosenSeats.push(seat);
+    updatedSeats.push(seat);
   });
+  this.updateSeats(updatedSeats);
 };
 
 SeatingClient.prototype.setExclusiveSeats = function (seats) {

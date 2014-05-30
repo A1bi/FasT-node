@@ -35,7 +35,7 @@ function Seat(id, d, t, e) {
   this.forClient = function (exclusives, chosen, originals) {
     seat = {};
     if (!this.available(exclusives, originals)) seat.t = true;
-    if (!this.taken && chosen && chosen.includes(this)) seat.c = true;
+    if (chosen && chosen.includes(this)) seat.c = true;
     if (this.inCollection(exclusives)) seat.e = true;
     
     return seat;
