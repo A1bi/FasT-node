@@ -3,7 +3,8 @@ var http = require("http"),
     connect = require("connect"),
     util = require("util"),
     fs = require("fs"),
-    EventEmitter = require("events").EventEmitter;
+    EventEmitter = require("events").EventEmitter,
+    apn = require("apn");
 
 var sockets = {
   "node": "/tmp/FasT-node-api.sock",
@@ -20,8 +21,6 @@ var instance = null;
 
 function RailsApi() {
   this.api = connect();
-  
-  this.init();
 };
 
 util.inherits(RailsApi, EventEmitter);
@@ -50,6 +49,20 @@ RailsApi.prototype.init = function (clients) {
     });
     
     console.log("Pushed message with action '" + params.action + "' to " + clientsPushedTo + " clients");
+  });
+  
+  this.api.use("/pushToApp", function (req, res) {
+    res.sendJSONResponse();
+    
+    var params = req.body;
+    var conn = _this.apnConnections[params.app];
+    if (!conn) return;
+    var note = new apn.Notification(params.notification);
+    params.tokens.forEach(function (token) {
+      conn.pushNotification(note, token);
+    });
+    
+    console.log("Pushed app notification for app '" + params.app + "' to " + params.tokens.length + " devices");
   });
   
   this.api.use("/seating", function (req, res) {
@@ -101,6 +114,28 @@ RailsApi.prototype.init = function (clients) {
   });
   
   http.createServer(this.api).listenToSocket(sockets.node);
+  
+  var isProduction = process.env.NODE_ENV == "production";
+  var certsPath = (isProduction) ? "/etc/ssl/private/" : "/usr/local/etc/ssl/private/";
+  var certs = {
+    stats: {
+      file: "push.de.theater-kaisersesch.stats.p12",
+      productionRequired: false
+    },
+    passbook: {
+      file: "pass.de.theater-kaisersesch.FasT.p12",
+      productionRequired: true
+    }
+  };
+  this.apnConnections = {};
+  for (var app in certs) {
+    var conn = new apn.Connection({ pfx: certsPath + certs[app].file, production: isProduction || certs[app].productionRequired });
+    conn.on("transmissionError", function (errorCode, notification, device) {
+      console.log("Failed to deliver push notification for device '" + device.token + "' with error: " + errorCode);
+    });
+    _this.apnConnections[app] = conn;
+    console.log("Created APNS connection for app '" + app + "'");
+  }
 };
 
 RailsApi.prototype.get = function (resource, action, callback) {

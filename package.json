@@ -6,7 +6,8 @@
     "socket.io": "0.9.x",
     "validator": "0.4.x",
     "connect": "2.7.x",
-    "node.extend": "1.0.x"
+    "node.extend": "1.0.x",
+    "apn": "1.5.x"
   },
   "devDependencies": {
     "should": "1.x",
