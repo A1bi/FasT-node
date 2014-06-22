@@ -95,15 +95,6 @@ Seats.prototype.get = function (seatId, dateId) {
   return this.dates[dateId][seatId];
 };
 
-Seats.prototype.choose = function (seatId, dateId, exclusives, originals) {
-  var seat = this.get(seatId, dateId);
-  if (seat && seat.choose(exclusives, originals)) {
-    return seat;
-  }
-  
-  return null;
-};
-
 Seats.prototype.getAll = function () {
   var seats = [];
   for (var dateId in this.dates) {

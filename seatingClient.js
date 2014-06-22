@@ -119,17 +119,27 @@ SeatingClient.prototype.setDateAndNumberOfSeats = function (date, number) {
 };
 
 SeatingClient.prototype.chooseSeat = function (seatId, callback) {
+  var ok = false;
   if (this.date && this.numberOfSeats > 0) {
-    var seat = allSeats.choose(seatId, this.date, this.exclusiveSeats, this.originalSeats);
+    var seat = allSeats.get(seatId, this.date);
     if (seat) {
-      this.chosenSeats.push(seat);
-      this.updateChosenSeats([seat]);
-    
-      console.log("Seat chosen");
+      var seatIndex = this.chosenSeats.indexOf(seat);
+      if (seatIndex != -1) {
+        seat.release();
+        this.chosenSeats.splice(seatIndex, 1);
+        ok = true;
+        console.log("Seat choice revoked");
+      
+      } else if (seat.choose(this.exclusiveSeats, this.originalSeats)) {
+        this.chosenSeats.push(seat);
+        ok = true;
+        console.log("Seat chosen");
+      }
+      if (ok) this.updateChosenSeats([seat]);
     }
   }
 
-  if (callback) callback({ ok: seat != null, seatId: seatId });
+  if (callback) callback({ ok: ok, seatId: seatId });
 };
 
 SeatingClient.prototype.updateSeats = function (seats) {
