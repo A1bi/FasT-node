@@ -36,7 +36,7 @@ function Seat(id, d, t, e) {
     seat = {};
     if (!this.available(exclusives, originals)) seat.t = true;
     if (chosen && chosen.includes(this)) seat.c = true;
-    if (this.inCollection(exclusives)) seat.e = true;
+    if (this.exclusive && this.inCollection(exclusives)) seat.e = true;
     
     return seat;
   };

@@ -123,10 +123,7 @@ SeatingClient.prototype.chooseSeat = function (seatId, callback) {
   if (this.date && this.numberOfSeats > 0) {
     var seat = allSeats.get(seatId, this.date);
     if (seat) {
-      var seatIndex = this.chosenSeats.indexOf(seat);
-      if (seatIndex != -1) {
-        seat.release();
-        this.chosenSeats.splice(seatIndex, 1);
+      if (this.removeChosenSeat(seat)) {
         ok = true;
         console.log("Seat choice revoked");
       
@@ -182,16 +179,51 @@ SeatingClient.prototype.setOriginalSeats = function (seats) {
   this.updateSeats(updatedSeats);
 };
 
+SeatingClient.prototype.addExclusiveSeats = function (seats, updatedSeats) {
+  this.updateExclusiveSeats(seats, function (seat, index) {
+    if (index == -1) {
+      this.exclusiveSeats.push(seat);
+      return true;
+    }
+  }, updatedSeats);
+};
+
+SeatingClient.prototype.removeExclusiveSeats = function (seats) {
+  this.updateExclusiveSeats(seats, function (seat, index) {
+    if (index > -1) {
+      this.exclusiveSeats.splice(index, 1);
+      this.removeChosenSeat(seat);
+      return true;
+    }
+  });
+};
+
 SeatingClient.prototype.setExclusiveSeats = function (seats) {
   var updatedSeats = this.exclusiveSeats.slice(0);
   this.exclusiveSeats = [];
+  this.addExclusiveSeats(seats, updatedSeats);
+};
+
+SeatingClient.prototype.updateExclusiveSeats = function (seats, callback, updatedSeats) {
+  updatedSeats = updatedSeats || [];
   
   this.iterateSeats(seats, function (seat) {
-    this.exclusiveSeats.push(seat);
-    updatedSeats.push(seat);
+    var index = this.exclusiveSeats.indexOf(seat);
+    if (callback.call(this, seat, index)) {
+      updatedSeats.push(seat);
+    }
   });
   
   this.updateSeats(updatedSeats);
+};
+
+SeatingClient.prototype.removeChosenSeat = function (seat) {
+  var chosenIndex = this.chosenSeats.indexOf(seat);
+  if (chosenIndex > -1) {
+    seat.release();
+    this.chosenSeats.splice(chosenIndex, 1);
+    return true;
+  }
 };
 
 SeatingClient.prototype.releaseSeats = function () {

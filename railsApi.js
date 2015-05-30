@@ -89,6 +89,12 @@ RailsApi.prototype.init = function (clients) {
       } else if (params.action == "setChosenSeats") {
         
       
+      } else if (params.action == "addExclusiveSeats") {
+        client.addExclusiveSeats(params.seats);
+        
+      } else if (params.action == "removeExclusiveSeats") {
+        client.removeExclusiveSeats(params.seats);
+        
       } else if (params.action == "setExclusiveSeats") {
         client.setExclusiveSeats(params.seats);
         
