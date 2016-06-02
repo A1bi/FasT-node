@@ -133,14 +133,28 @@ RailsApi.prototype.init = function (clients) {
       productionRequired: true
     }
   };
+  
   this.apnConnections = {};
   for (var app in certs) {
-    var conn = new apn.Connection({ pfx: certsPath + certs[app].file, production: isProduction || certs[app].productionRequired });
+    var options = {
+      pfx: certsPath + certs[app].file, production: isProduction || certs[app].productionRequired,
+      batchFeedback: true,
+      interval: 1800
+    };
+    
+    var conn = new apn.Connection(options);
     conn.on("transmissionError", function (errorCode, notification, device) {
       console.log("Failed to deliver push notification for device '" + device.token + "' with error: " + errorCode);
     });
     _this.apnConnections[app] = conn;
     console.log("Created APNS connection for app '" + app + "'");
+    
+    var feedback = new apn.Feedback(options);
+    feedback.on("feedback", function (devices) {
+      devices.forEach(function (item) {
+        console.log("Device no longer available: " + item.device);
+      });
+    });
   }
 };
 
@@ -176,7 +190,7 @@ RailsApi.prototype.request = function (path, method, data, callback) {
     options['socketPath'] = sockets.rails;
   } else {
     options['hostname'] = "127.0.0.1";
-    protocol = https;
+    options['port'] = 4000;
   }
   
   var req = protocol.request(options, function (res) {
