@@ -58,9 +58,7 @@ RailsApi.prototype.init = function (clients) {
     var conn = _this.apnConnections[params.app];
     if (!conn) return;
     var note = new apn.Notification(params.notification);
-    params.tokens.forEach(function (token) {
-      conn.pushNotification(note, token);
-    });
+    conn.pushNotification(note, params.tokens);
     
     console.log("Pushed app notification for app '" + params.app + "' to " + params.tokens.length + " devices");
   });
