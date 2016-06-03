@@ -9,11 +9,8 @@ var seats = require("./seats"),
 
 var server = http.Server().listenToSocket("/tmp/FasT-node.sock");
     
-var io = socketio.listen(server, {
-  "transports": ["websocket", "xhr-polling"],
-  "resource": "/node",
-  "match origin protocol": true,
-  "browser client minification": true
+var io = socketio(server, {
+  "path": "/node"
 });
 
 var clientClasses = { "seating": SeatingClient };
@@ -56,7 +53,9 @@ for (var namespace in clientClasses) {
   registerNamespace(namespace);
 }
 
-io.of("/seating").authorization(function (data, callback) {
+io.of("/seating").use(function (socket, next) {
+  var error;
+  var data = socket.request;
   if (data.seatingId) {
     var seatingClient;
     clients.forEach(function (client) {
@@ -66,8 +65,10 @@ io.of("/seating").authorization(function (data, callback) {
       }
     });
     data.seatingClient = seatingClient;
-    callback(null, !!seatingClient);
-  } else {
-    callback(null, true);
+
+    if (!seatingClient) {
+      error = new Error("invalid seating id");
+    }
   }
+  next(error);
 });
