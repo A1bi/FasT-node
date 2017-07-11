@@ -8,7 +8,7 @@ var http = require("http"),
 
 var sockets = {
   "node": "/tmp/FasT-node-api.sock",
-  "rails": "/tmp/unicorn.FasT.sock"
+  "rails": "/tmp/unicorn.FasT.production.sock"
 };
 
 
@@ -120,7 +120,7 @@ RailsApi.prototype.init = function (clients) {
   http.createServer(this.api).listenToSocket(sockets.node);
   
   var isProduction = process.env.NODE_ENV == "production";
-  var certsPath = (isProduction) ? "/etc/ssl/private/" : "/usr/local/etc/ssl/private/";
+  var certsPath = "/usr/local/etc/ssl/private/";
   var certs = {
     stats: {
       file: "push.de.theater-kaisersesch.stats.p12",
@@ -142,7 +142,9 @@ RailsApi.prototype.init = function (clients) {
     
     var conn = new apn.Connection(options);
     conn.on("transmissionError", function (errorCode, notification, device) {
-      console.log("Failed to deliver push notification for device '" + device.token + "' with error: " + errorCode);
+      var token = !!device ? device.token : "(unknown token)";
+      errorCode = errorCode || "unknown error";
+      console.log("Failed to deliver push notification for device '" + token + "' with error: " + errorCode);
     });
     _this.apnConnections[app] = conn;
     console.log("Created APNS connection for app '" + app + "'");
@@ -187,7 +189,7 @@ RailsApi.prototype.request = function (path, method, data, callback) {
   if (process.env.NODE_ENV == "production") {
     options['socketPath'] = sockets.rails;
   } else {
-    options['hostname'] = "127.0.0.1";
+    options['hostname'] = "localhost";
     options['port'] = 4000;
   }
   
