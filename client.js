@@ -25,9 +25,5 @@ Client.prototype.destroy = function () {
   console.log("Client disconnected");
 };
 
-Client.prototype.push = function (action, data) {
-  this.socket.emit(action, data);
-};
-
 
 module.exports = Client;

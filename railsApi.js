@@ -3,8 +3,7 @@ var http = require("http"),
     connect = require("connect"),
     util = require("util"),
     fs = require("fs"),
-    EventEmitter = require("events").EventEmitter,
-    apn = require("apn");
+    EventEmitter = require("events").EventEmitter;
 
 var sockets = {
   "node": "/tmp/FasT-node-api.sock",
@@ -36,33 +35,6 @@ RailsApi.prototype.init = function (clients) {
     next();
   });
 
-  this.api.use("/push", function (req, res) {
-    res.sendJSONResponse();
-    
-    var params = req.body;
-    var clientsPushedTo = 0;
-    _this.clients.forEach(function (client) {
-      if (params.recipients.indexOf(client.type) != -1 && ((params.recipientIds && params.recipientIds.indexOf(client.id) != -1) || !params.recipientIds)) {
-        client.push(params.action, params.info);
-        clientsPushedTo++;
-      }
-    });
-    
-    console.log("Pushed message with action '" + params.action + "' to " + clientsPushedTo + " clients");
-  });
-  
-  this.api.use("/pushToApp", function (req, res) {
-    res.sendJSONResponse();
-    
-    var params = req.body;
-    var conn = _this.apnConnections[params.app];
-    if (!conn) return;
-    var note = new apn.Notification(params.notification);
-    conn.pushNotification(note, params.tokens);
-    
-    console.log("Pushed app notification for app '" + params.app + "' to " + params.tokens.length + " devices");
-  });
-  
   this.api.use("/seating", function (req, res) {
     var params = req.body, client;
     
@@ -118,44 +90,6 @@ RailsApi.prototype.init = function (clients) {
   });
   
   http.createServer(this.api).listenToSocket(sockets.node);
-  
-  var isProduction = process.env.NODE_ENV == "production";
-  var certsPath = "/usr/local/etc/ssl/private/";
-  var certs = {
-    stats: {
-      file: "push.de.theater-kaisersesch.stats.p12",
-      productionRequired: false
-    },
-    passbook: {
-      file: "pass.de.theater-kaisersesch.FasT.p12",
-      productionRequired: true
-    }
-  };
-  
-  this.apnConnections = {};
-  for (var app in certs) {
-    var options = {
-      pfx: certsPath + certs[app].file, production: isProduction || certs[app].productionRequired,
-      batchFeedback: true,
-      interval: 1800
-    };
-    
-    var conn = new apn.Connection(options);
-    conn.on("transmissionError", function (errorCode, notification, device) {
-      var token = !!device ? device.token : "(unknown token)";
-      errorCode = errorCode || "unknown error";
-      console.log("Failed to deliver push notification for device '" + token + "' with error: " + errorCode);
-    });
-    _this.apnConnections[app] = conn;
-    console.log("Created APNS connection for app '" + app + "'");
-    
-    var feedback = new apn.Feedback(options);
-    feedback.on("feedback", function (devices) {
-      devices.forEach(function (item) {
-        console.log("Device no longer available: " + item.device);
-      });
-    });
-  }
 };
 
 RailsApi.prototype.get = function (resource, action, callback) {
