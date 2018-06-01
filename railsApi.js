@@ -7,7 +7,7 @@ var http = require("http"),
 
 var sockets = {
   "node": "/tmp/FasT-node-api.sock",
-  "rails": "/tmp/unicorn.FasT.production.sock"
+  "rails": "/tmp/unicorn.FasT.sock"
 };
 
 

@@ -19,6 +19,6 @@ Array.prototype.includes = function (obj) {
 Server.prototype.listenToSocket = function (sockPath) {
   if (fs.existsSync(sockPath)) fs.unlinkSync(sockPath);
   this.listen(sockPath);
-  fs.chmod(sockPath, "0777");
+  fs.chmodSync(sockPath, "0777");
   return this;
 };
