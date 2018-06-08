@@ -7,6 +7,16 @@ var seats = require("./seats"),
     api = require("./railsApi"),
     SeatingClient = require("./seatingClient");
 
+if (process.env.NODE_ENV == "production") {
+  var dsn = process.env.SENTRY_DSN;
+  if (!dsn) {
+    console.log('error: missing ENV variable SENTRY_DSN');
+    process.exit(1);
+  }
+  var Raven = require('raven');
+  Raven.config(dsn).install();
+}
+
 var server = http.Server().listenToSocket("/tmp/FasT-node.sock");
     
 var io = socketio(server, {
