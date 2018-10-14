@@ -1,10 +1,11 @@
 var http = require("http"),
     connect = require("connect"),
+    bodyParser = require("body-parser"),
     util = require("util"),
     EventEmitter = require("events").EventEmitter;
 
 var sockets = {
-  "node": "/tmp/FasT-node-api.sock",
+  "node": "/tmp/FasT-node.sock",
   "rails": "/tmp/unicorn.FasT.sock"
 };
 
@@ -25,8 +26,8 @@ util.inherits(RailsApi, EventEmitter);
 RailsApi.prototype.init = function (clients) {
   var _this = this;
   this.clients = clients;
-  
-  this.api.use(connect.json());
+
+  this.api.use(bodyParser.json());
   this.api.use(function (req, res, next) {
     res.setHeader("Content-Type", "application/json");
     res.response = { ok: true };
@@ -78,8 +79,8 @@ RailsApi.prototype.init = function (clients) {
     
     res.sendJSONResponse();
   });
-  
-  http.createServer(this.api).listenToSocket(sockets.node);
+
+  this.server = http.createServer(this.api).listenToSocket(sockets.node);
 };
 
 RailsApi.prototype.get = function (resource, action, callback) {
@@ -108,16 +109,15 @@ RailsApi.prototype.request = function (path, method, data, callback) {
       "Content-Length": Buffer.byteLength(body)
     } 
   };
-  
-  var protocol = http;
+
   if (process.env.NODE_ENV == "production") {
     options['socketPath'] = sockets.rails;
   } else {
     options['hostname'] = "localhost";
     options['port'] = 4000;
   }
-  
-  var req = protocol.request(options, function (res) {
+
+  var req = http.request(options, function (res) {
     var data = "";
     
     res.on("data", function (d) {

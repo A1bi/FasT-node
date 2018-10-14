@@ -1,5 +1,4 @@
-var http = require("http"),
-    socketio = require("socket.io");
+var socketio = require("socket.io");
 
 require("./extensions");    
 var seats = require("./seats"),
@@ -16,16 +15,14 @@ if (process.env.NODE_ENV == "production") {
   Raven.config(dsn).install();
 }
 
-var server = http.Server().listenToSocket("/tmp/FasT-node.sock");
-    
-var io = socketio(server, {
-  "path": "/node"
-});
-
 var clientClasses = { "seating": SeatingClient };
 var clients = [];
 
 api.init(clients);
+
+var io = socketio(api.server, {
+  "path": "/node"
+});
 
 seats.on("updatedSeats", function (updatedSeats) {
   clients.forEach(function (c) {
