@@ -1,8 +1,6 @@
-var util = require("util"),
-    crypto = require('crypto');
+var util = require("util");
 
 var Client = require("./client"),
-    railsApi = require("./railsApi"),
     allSeats = require("./seats");
 
 function SeatingClient(socket, sessionInfo) {
@@ -16,10 +14,9 @@ function SeatingClient(socket, sessionInfo) {
   this.expired;
   
   this.init();
-  
-  this.id = crypto.randomBytes(12).toString("hex");
-  SeatingClient.super_.call(this, socket, "seating", this.id);
-  
+
+  SeatingClient.super_.call(this, socket, "seating");
+
   sessionInfo = sessionInfo || {};
   if (sessionInfo.originalSeats) {
     this.setOriginalSeats(sessionInfo.originalSeats);
@@ -33,8 +30,8 @@ util.inherits(SeatingClient, Client);
 SeatingClient.prototype.setSocket = function (socket) {
   if (!socket) return;
   this.socket = socket;
+  this.id = socket.id;
   this.updateSeats();
-  this.socket.emit("gotSeatingId", { id: this.id });
 };
 
 SeatingClient.prototype.registerEvents = function () {

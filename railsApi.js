@@ -1,8 +1,6 @@
 var http = require("http"),
-    https = require("https"),
     connect = require("connect"),
     util = require("util"),
-    fs = require("fs"),
     EventEmitter = require("events").EventEmitter;
 
 var sockets = {
@@ -37,10 +35,10 @@ RailsApi.prototype.init = function (clients) {
 
   this.api.use("/seating", function (req, res) {
     var params = req.body, client;
-    
-    if (params.clientId) {
+
+    if (params.socketId) {
       _this.clients.forEach(function (c) {
-        if (c.type == "seating" && params.clientId == c.id) {
+        if (c.type == "seating" && params.socketId == c.id) {
           client = c;
           return;
         }
@@ -55,10 +53,7 @@ RailsApi.prototype.init = function (clients) {
     if (res.response.ok) {
       if (params.action == "getChosenSeats") {
         res.response.seats = client.getChosenSeats();
-        
-      } else if (params.action == "setChosenSeats") {
-        
-      
+
       } else if (params.action == "addExclusiveSeats") {
         client.addExclusiveSeats(params.seats);
         
@@ -74,12 +69,7 @@ RailsApi.prototype.init = function (clients) {
       } else if (params.action == "updateSeats") {
         console.log("Received seat update from Rails.");
         _this.emit("updateSeats", params.seats);
-      
-      } else if (params.action == "initSeatingSession") {
-        _this.emit("initSeatingSession", params.session, function (seatingId) {
-          res.response.seatingId = seatingId;
-        });
-      
+
       } else {
         res.response.ok = false;
         res.response.error = "unknown action";
