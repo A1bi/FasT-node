@@ -3,11 +3,12 @@ var util = require("util"),
 
 function Client(socket, clientType) {
   this.socket = socket;
+  this.id = socket.id;
   this.type = clientType || null;
 
   this.registerEvents();
-  
-  console.log("New client of type '" + clientType + "'");
+
+  console.log(`New client with id ${this.id}.`);
 };
 
 util.inherits(Client, EventEmitter);
@@ -21,7 +22,7 @@ Client.prototype.registerEvents = function () {
 
 Client.prototype.destroy = function () {
   this.emit("destroyed");
-  console.log("Client disconnected");
+  console.log(`Client ${this.id} disconnected.`);
 };
 
 

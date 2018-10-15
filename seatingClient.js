@@ -3,7 +3,7 @@ var util = require("util");
 var Client = require("./client"),
     allSeats = require("./seats");
 
-function SeatingClient(socket, sessionInfo) {
+function SeatingClient(socket) {
   this.chosenSeats;
   this.exclusiveSeats;
   this.originalSeats;
@@ -17,22 +17,10 @@ function SeatingClient(socket, sessionInfo) {
 
   SeatingClient.super_.call(this, socket, "seating");
 
-  sessionInfo = sessionInfo || {};
-  if (sessionInfo.originalSeats) {
-    this.setOriginalSeats(sessionInfo.originalSeats);
-  }
-  
-  this.setSocket(socket);
+  this.updateSeats();
 };
 
 util.inherits(SeatingClient, Client);
-
-SeatingClient.prototype.setSocket = function (socket) {
-  if (!socket) return;
-  this.socket = socket;
-  this.id = socket.id;
-  this.updateSeats();
-};
 
 SeatingClient.prototype.registerEvents = function () {
   var _this = this;
