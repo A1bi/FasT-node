@@ -12,7 +12,7 @@ function SeatingClient(socket) {
   this.expirationTimer = null;
   this.expirationTime = 900;
   this.expired;
-  
+
   this.init();
 
   SeatingClient.super_.call(this, socket, "seating");
@@ -25,17 +25,17 @@ util.inherits(SeatingClient, Client);
 SeatingClient.prototype.registerEvents = function () {
   var _this = this;
   SeatingClient.super_.prototype.registerEvents.call(this);
-  
+
   this.socket.on("chooseSeat", function (data, callback) {
     _this.chooseSeat(data.seatId, callback);
   });
-  
+
   this.socket.on("setDateAndNumberOfSeats", function (data, callback) {
     if (!data || _this.expired) return;
     _this.setDateAndNumberOfSeats(data.date, data.numberOfSeats);
     callback();
   });
-  
+
   this.socket.on("reset", function () {
     _this.reset();
   });
@@ -43,7 +43,7 @@ SeatingClient.prototype.registerEvents = function () {
 
 SeatingClient.prototype.destroy = function () {
   SeatingClient.super_.prototype.destroy.call(this);
-  
+
   this.killExpirationTimer();
   this.releaseSeats();
 };
@@ -67,7 +67,7 @@ SeatingClient.prototype.expire = function () {
   this.reset();
   this.killExpirationTimer();
   this.expired = true;
-  
+
   console.log("Seating session expired");
   this.socket.emit("expired");
 };
@@ -81,7 +81,7 @@ SeatingClient.prototype.setExpirationTimer = function () {
   this.killExpirationTimer();
   this.expirationTimer = setTimeout(function () {
     _this.expire();
-    
+
   }, this.expirationTime * 1000);
 };
 
@@ -99,7 +99,7 @@ SeatingClient.prototype.setDateAndNumberOfSeats = function (date, number) {
     this.date = date;
   }
   this.numberOfSeats = number;
-  
+
   this.updateChosenSeats(updatedSeats);
 };
 
@@ -111,7 +111,7 @@ SeatingClient.prototype.chooseSeat = function (seatId, callback) {
       if (this.removeChosenSeat(seat)) {
         ok = true;
         console.log("Seat choice revoked");
-      
+
       } else if (seat.choose(this.exclusiveSeats, this.originalSeats)) {
         this.chosenSeats.push(seat);
         ok = true;
@@ -131,7 +131,7 @@ SeatingClient.prototype.updateSeats = function (seats) {
     updatedSeats[seat.date] = updatedSeats[seat.date] || {};
     updatedSeats[seat.date][seat.id] = seat.forClient(_this.exclusiveSeats, _this.chosenSeats, _this.originalSeats);
   });
-  
+
   this.socket.emit("updateSeats", {
     seats: updatedSeats
   });
@@ -191,14 +191,14 @@ SeatingClient.prototype.setExclusiveSeats = function (seats) {
 
 SeatingClient.prototype.updateExclusiveSeats = function (seats, callback, updatedSeats) {
   updatedSeats = updatedSeats || [];
-  
+
   this.iterateSeats(seats, function (seat) {
     var index = this.exclusiveSeats.indexOf(seat);
     if (callback.call(this, seat, index)) {
       updatedSeats.push(seat);
     }
   });
-  
+
   this.updateSeats(updatedSeats);
 };
 
@@ -217,7 +217,7 @@ SeatingClient.prototype.releaseSeats = function () {
     seat.release();
   });
   this.chosenSeats.length = 0;
-  
+
   allSeats.updatedSeats(updatedSeats);
 };
 

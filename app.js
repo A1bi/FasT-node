@@ -1,6 +1,6 @@
 var socketio = require("socket.io");
 
-require("./extensions");    
+require("./extensions");
 var seats = require("./seats"),
     api = require("./railsApi"),
     SeatingClient = require("./seatingClient");

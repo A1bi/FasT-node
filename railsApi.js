@@ -44,29 +44,29 @@ RailsApi.prototype.init = function (clients) {
           return;
         }
       });
-      
+
       if (!client) {
         res.response.ok = false;
         res.response.error = "unknown client";
       }
     }
-    
+
     if (res.response.ok) {
       if (params.action == "getChosenSeats") {
         res.response.seats = client.getChosenSeats();
 
       } else if (params.action == "addExclusiveSeats") {
         client.addExclusiveSeats(params.seats);
-        
+
       } else if (params.action == "removeExclusiveSeats") {
         client.removeExclusiveSeats(params.seats);
-        
+
       } else if (params.action == "setExclusiveSeats") {
         client.setExclusiveSeats(params.seats);
-        
+
       } else if (params.action == "setOriginalSeats") {
         client.setOriginalSeats(params.seats);
-      
+
       } else if (params.action == "updateSeats") {
         console.log("Received seat update from Rails.");
         _this.emit("updateSeats", params.seats);
@@ -76,7 +76,7 @@ RailsApi.prototype.init = function (clients) {
         res.response.error = "unknown action";
       }
     }
-    
+
     res.sendJSONResponse();
   });
 
@@ -99,7 +99,7 @@ RailsApi.prototype.requestOnResource = function (resource, action, method, data,
 
 RailsApi.prototype.request = function (path, method, data, callback) {
   var body = JSON.stringify(data || {});
-  
+
   var options = {
     method: method,
     path: "/api/" + path,
@@ -107,7 +107,7 @@ RailsApi.prototype.request = function (path, method, data, callback) {
     headers: {
       "Content-Type": "application/json",
       "Content-Length": Buffer.byteLength(body)
-    } 
+    }
   };
 
   if (process.env.NODE_ENV == "production") {
@@ -119,11 +119,11 @@ RailsApi.prototype.request = function (path, method, data, callback) {
 
   var req = http.request(options, function (res) {
     var data = "";
-    
+
     res.on("data", function (d) {
       data += d;
     });
-    
+
     res.on("end", function () {
       try {
         callback(JSON.parse(data));
@@ -132,13 +132,13 @@ RailsApi.prototype.request = function (path, method, data, callback) {
         callback({});
       }
     });
-  
+
   }).on("error", function (error) {
-    console.log(error);      
+    console.log(error);
   });
-  
+
   req.write(body);
-  
+
   req.end();
 };
 
