@@ -25,16 +25,10 @@ var io = socketio(api.server, {
 
 io.of("/seating").on("connection", function (socket) {
   var client = new SeatingClient(socket);
-  client.on("destroyed", function () {
-    clients.splice(clients.indexOf(client), 1);
-  });
   clients.push(client);
-});
 
-seats.on("updatedSeats", function (updatedSeats) {
-  clients.forEach(function (c) {
-    if (typeof(c.updateSeats) == 'function') {
-      c.updateSeats(updatedSeats);
-    }
+  client.on("destroyed", function () {
+    client.removeAllListeners();
+    clients.splice(clients.indexOf(client), 1);
   });
 });

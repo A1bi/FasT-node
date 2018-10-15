@@ -39,6 +39,9 @@ SeatingClient.prototype.registerEvents = function () {
   this.socket.on("reset", function () {
     _this.reset();
   });
+
+  this.updatedSeatsListener = this.updateSeats.bind(this);
+  allSeats.on("updatedSeats", this.updatedSeatsListener);
 };
 
 SeatingClient.prototype.destroy = function () {
@@ -46,6 +49,8 @@ SeatingClient.prototype.destroy = function () {
 
   this.killExpirationTimer();
   this.releaseSeats();
+
+  allSeats.off("updatedSeats", this.updatedSeatsListener);
 };
 
 SeatingClient.prototype.init = function () {

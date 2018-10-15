@@ -57,6 +57,8 @@ function Seats() {
     console.log("Initializing seats, fetching info from Rails...");
     _this.update(seatsInfo.seats);
   });
+
+  this.setMaxListeners(Infinity);
 }
 
 util.inherits(Seats, EventEmitter);
