@@ -3,11 +3,12 @@ var util = require("util");
 var Client = require("./client"),
     allSeats = require("./seats");
 
-function SeatingClient(socket) {
+function SeatingClient(socket, eventId) {
   this.chosenSeats;
   this.exclusiveSeats;
   this.originalSeats;
   this.numberOfSeats;
+  this.event = parseInt(eventId);
   this.date;
   this.expirationTimer = null;
   this.expirationTime = 900;
@@ -131,11 +132,17 @@ SeatingClient.prototype.chooseSeat = function (seatId, callback) {
 
 SeatingClient.prototype.updateSeats = function (seats) {
   seats = seats || allSeats.getAll();
-  var updatedSeats = {}, _this = this;
+  var updatedSeats = {}, _this = this, anyUpdates = false;
+
   seats.forEach(function (seat) {
-    updatedSeats[seat.date] = updatedSeats[seat.date] || {};
-    updatedSeats[seat.date][seat.id] = seat.forClient(_this.exclusiveSeats, _this.chosenSeats, _this.originalSeats);
+    if (!_this.event || allSeats.events[_this.event].dates.indexOf(parseInt(seat.date)) >= 0) {
+      updatedSeats[seat.date] = updatedSeats[seat.date] || {};
+      updatedSeats[seat.date][seat.id] = seat.forClient(_this.exclusiveSeats, _this.chosenSeats, _this.originalSeats);
+      anyUpdates = true;
+    }
   });
+
+  if (!anyUpdates) return;
 
   this.socket.emit("updateSeats", {
     seats: updatedSeats

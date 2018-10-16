@@ -24,7 +24,7 @@ var io = socketio(api.server, {
 });
 
 io.of("/seating").on("connection", function (socket) {
-  var client = new SeatingClient(socket);
+  var client = new SeatingClient(socket, socket.handshake.query.event_id);
   clients.push(client);
 
   client.on("destroyed", function () {

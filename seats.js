@@ -46,6 +46,7 @@ function Seat(id, d, t, e) {
 var instance = null;
 
 function Seats() {
+  this.events = {};
   this.dates = {};
   var _this = this;
 
@@ -55,6 +56,7 @@ function Seats() {
 
   railsApi.get("seats", "availability", function (seatsInfo) {
     console.log("Initializing seats, fetching info from Rails...");
+    _this.events = seatsInfo.events;
     _this.update(seatsInfo.seats);
   });
 
