@@ -238,7 +238,9 @@ SeatingClient.prototype.iterateSeats = function (seats, callback) {
   for (var dateId in seats) {
     seats[dateId].forEach(function (seatId) {
       var seat = allSeats.get(seatId, dateId);
-      callback.call(_this, seat);
+      if (seat) {
+        callback.call(_this, seat);
+      }
     });
   }
 };
