@@ -24,8 +24,13 @@ function SeatingClient(socket, eventId) {
 util.inherits(SeatingClient, Client);
 
 SeatingClient.prototype.registerEvents = function () {
+  this.updatedSeatsListener = this.updateSeats.bind(this);
+  allSeats.on("updatedSeats", this.updatedSeatsListener);
+};
+
+SeatingClient.prototype.registerSocketEvents = function () {
   var _this = this;
-  SeatingClient.super_.prototype.registerEvents.call(this);
+  SeatingClient.super_.prototype.registerSocketEvents.call(this);
 
   this.socket.on("chooseSeat", function (data, callback) {
     _this.chooseSeat(data.seatId, callback);
@@ -40,9 +45,6 @@ SeatingClient.prototype.registerEvents = function () {
   this.socket.on("reset", function () {
     _this.reset();
   });
-
-  this.updatedSeatsListener = this.updateSeats.bind(this);
-  allSeats.on("updatedSeats", this.updatedSeatsListener);
 };
 
 SeatingClient.prototype.destroy = function () {
@@ -62,6 +64,7 @@ SeatingClient.prototype.init = function () {
   this.date = null;
   this.expired = false;
   this.setExpirationTimer();
+  this.registerEvents();
 };
 
 SeatingClient.prototype.reset = function () {

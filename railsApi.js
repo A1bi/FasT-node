@@ -35,15 +35,11 @@ RailsApi.prototype.init = function (clients) {
   });
 
   this.api.use("/seating", function (req, res) {
-    var params = req.body, client;
+    var params = req.body;
+    var client;
 
     if (params.socketId) {
-      _this.clients.forEach(function (c) {
-        if (c.type == "seating" && params.socketId == c.id) {
-          client = c;
-          return;
-        }
-      });
+      client = _this.clients[params.socketId];
 
       if (!client) {
         res.response.ok = false;

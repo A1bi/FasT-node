@@ -15,7 +15,7 @@ if (process.env.NODE_ENV == "production") {
   Raven.config(dsn).install();
 }
 
-var clients = [];
+var clients = {};
 
 api.init(clients);
 
@@ -23,12 +23,31 @@ var io = socketio(api.server, {
   "path": "/node"
 });
 
-io.of("/seating").on("connection", function (socket) {
-  var client = new SeatingClient(socket, socket.handshake.query.event_id);
-  clients.push(client);
+io.of("/seating")
+  .use(function (socket, next)  {
+    var restoreId = socket.handshake.query.restore_id;
+    if (restoreId && !(restoreId in clients)) {
+      next(new Error("Invalid socket id to restore"));
+      return;
+    }
 
-  client.on("destroyed", function () {
-    client.removeAllListeners();
-    clients.splice(clients.indexOf(client), 1);
-  });
-});
+    next();
+  })
+
+  .on("connection", function (socket) {
+    var client;
+    var restoreId = socket.handshake.query.restore_id;
+    if (restoreId) {
+      client = clients[restoreId];
+      client.setSocket(socket);
+
+    } else {
+      client = new SeatingClient(socket, socket.handshake.query.event_id);
+      client.on("destroyed", function () {
+        client.removeAllListeners();
+        delete clients[client.id];
+      });
+      clients[client.id] = client;
+    }
+  })
+;
