@@ -23,7 +23,17 @@ Client.prototype.registerSocketEvents = function () {
   }.bind(this));
 };
 
-Client.prototype.destroy = function (timeout) {
+Client.prototype.detachSocket = function () {
+  this.socket.removeAllListeners();
+  this.socket.disconnect();
+};
+
+Client.prototype.disconnect = function () {
+  this.detachSocket();
+  this.destroy();
+};
+
+Client.prototype.destroy = function () {
   this.emit("destroyed");
   console.log(`Client ${this.id} destroyed.`);
 };
@@ -32,8 +42,7 @@ Client.prototype.setSocket = function (socket) {
   if (this.socket) {
     clearTimeout(this.connectionTimeoutTimer);
 
-    this.socket.removeAllListeners();
-    this.socket.disconnect();
+    this.detachSocket();
 
     console.log(`Client ${this.id} reconnected.`);
 

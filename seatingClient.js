@@ -3,6 +3,8 @@ var util = require("util");
 var Client = require("./client"),
     allSeats = require("./seats");
 
+SeatingClient.expirationTime = 1800 * 1000;
+
 function SeatingClient(socket, eventId) {
   this.chosenSeats;
   this.exclusiveSeats;
@@ -11,8 +13,6 @@ function SeatingClient(socket, eventId) {
   this.event = parseInt(eventId);
   this.date;
   this.expirationTimer = null;
-  this.expirationTime = 900;
-  this.expired;
 
   this.init();
 
@@ -37,7 +37,7 @@ SeatingClient.prototype.registerSocketEvents = function () {
   });
 
   this.socket.on("setDateAndNumberOfSeats", function (data, callback) {
-    if (!data || _this.expired) return;
+    if (!data) return;
     _this.setDateAndNumberOfSeats(data.date, data.numberOfSeats);
     callback();
   });
@@ -62,7 +62,6 @@ SeatingClient.prototype.init = function () {
   this.originalSeats = [];
   this.numberOfSeats = 0;
   this.date = null;
-  this.expired = false;
   this.setExpirationTimer();
   this.registerEvents();
 };
@@ -73,12 +72,9 @@ SeatingClient.prototype.reset = function () {
 };
 
 SeatingClient.prototype.expire = function () {
-  this.reset();
-  this.killExpirationTimer();
-  this.expired = true;
-
   console.log("Seating session expired");
   this.socket.emit("expired");
+  this.disconnect();
 };
 
 SeatingClient.prototype.killExpirationTimer = function () {
@@ -91,7 +87,7 @@ SeatingClient.prototype.setExpirationTimer = function () {
   this.expirationTimer = setTimeout(function () {
     _this.expire();
 
-  }, this.expirationTime * 1000);
+  }, SeatingClient.expirationTime);
 };
 
 SeatingClient.prototype.setDateAndNumberOfSeats = function (date, number) {
