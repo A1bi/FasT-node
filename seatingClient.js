@@ -5,7 +5,7 @@ var Client = require("./client"),
 
 SeatingClient.expirationTime = 1800 * 1000;
 
-function SeatingClient(socket, eventId) {
+function SeatingClient(socket, eventId, privileged) {
   this.chosenSeats;
   this.exclusiveSeats;
   this.originalSeats;
@@ -13,6 +13,7 @@ function SeatingClient(socket, eventId) {
   this.event = parseInt(eventId);
   this.date;
   this.expirationTimer = null;
+  this.privileged = privileged;
 
   this.init();
 
@@ -39,7 +40,7 @@ SeatingClient.prototype.registerSocketEvents = function () {
   this.socket.on("setDateAndNumberOfSeats", function (data, callback) {
     if (!data) return;
     _this.setDateAndNumberOfSeats(data.date, data.numberOfSeats);
-    callback();
+    if (callback) callback();
   });
 
   this.socket.on("reset", function () {
@@ -69,6 +70,8 @@ SeatingClient.prototype.init = function () {
 SeatingClient.prototype.reset = function () {
   this.releaseSeats();
   this.init();
+
+  console.log("Seats reset for client");
 };
 
 SeatingClient.prototype.expire = function () {
@@ -82,6 +85,8 @@ SeatingClient.prototype.killExpirationTimer = function () {
 };
 
 SeatingClient.prototype.setExpirationTimer = function () {
+  if (this.privileged) return;
+
   var _this = this;
   this.killExpirationTimer();
   this.expirationTimer = setTimeout(function () {
@@ -117,7 +122,7 @@ SeatingClient.prototype.chooseSeat = function (seatId, callback) {
         ok = true;
         console.log("Seat choice revoked");
 
-      } else if (seat.choose(this.exclusiveSeats, this.originalSeats)) {
+      } else if (seat.choose(this.exclusiveSeats, this.originalSeats, this.privileged)) {
         this.chosenSeats.push(seat);
         ok = true;
         console.log("Seat chosen");
@@ -136,7 +141,12 @@ SeatingClient.prototype.updateSeats = function (seats) {
   seats.forEach(function (seat) {
     if (!_this.event || allSeats.events[_this.event].dates.indexOf(parseInt(seat.date)) >= 0) {
       updatedSeats[seat.date] = updatedSeats[seat.date] || {};
-      updatedSeats[seat.date][seat.id] = seat.forClient(_this.exclusiveSeats, _this.chosenSeats, _this.originalSeats);
+      updatedSeats[seat.date][seat.id] = seat.forClient(
+        _this.exclusiveSeats,
+        _this.chosenSeats,
+        _this.originalSeats,
+        _this.privileged
+      );
       anyUpdates = true;
     }
   });

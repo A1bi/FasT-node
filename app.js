@@ -42,11 +42,17 @@ io.of("/seating")
       client.setSocket(socket);
 
     } else {
-      client = new SeatingClient(socket, socket.handshake.query.event_id);
+      client = new SeatingClient(
+        socket,
+        socket.handshake.query.event_id,
+        socket.handshake.query.privileged
+      );
+
       client.on("destroyed", function () {
         client.removeAllListeners();
         delete clients[client.id];
       });
+
       clients[client.id] = client;
     }
   })

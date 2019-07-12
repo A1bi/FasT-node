@@ -15,12 +15,15 @@ function Seat(id, d, t, e) {
     return collection && collection.includes(this);
   };
 
-  this.available = function (exclusives, originals) {
-    return this.inCollection(originals) || (!this.taken && !this.chosen && (!this.exclusive || this.inCollection(exclusives)));
+  this.available = function (exclusives, originals, privileged) {
+    return this.inCollection(originals) || (
+             !this.taken && !this.chosen &&
+             (!this.exclusive || privileged || this.inCollection(exclusives))
+           );
   };
 
-  this.choose = function (exclusives, originals) {
-    if (this.available(exclusives, originals)) {
+  this.choose = function (exclusives, originals, privileged) {
+    if (this.available(exclusives, originals, privileged)) {
       this.chosen = true;
       return true;
     }
@@ -32,9 +35,9 @@ function Seat(id, d, t, e) {
     this.chosen = false;
   };
 
-  this.forClient = function (exclusives, chosen, originals) {
+  this.forClient = function (exclusives, chosen, originals, privileged) {
     seat = {};
-    if (!this.available(exclusives, originals)) seat.t = true;
+    if (!this.available(exclusives, originals, privileged)) seat.t = true;
     if (chosen && chosen.includes(this)) seat.c = true;
     if (this.exclusive && this.inCollection(exclusives)) seat.e = true;
 
