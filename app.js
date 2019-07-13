@@ -45,7 +45,7 @@ io.of("/seating")
       client = new SeatingClient(
         socket,
         socket.handshake.query.event_id,
-        socket.handshake.query.privileged
+        socket.handshake.query.privileged === 'true'
       );
 
       client.on("destroyed", function () {
