@@ -79,18 +79,12 @@ RailsApi.prototype.init = function (clients) {
   this.server = http.createServer(this.api).listenToSocket(sockets.node);
 };
 
-RailsApi.prototype.get = function (resource, action, callback) {
-  this.requestOnResource(resource, action, "GET", null, callback);
+RailsApi.prototype.get = function (path, callback) {
+  this.request(path, "GET", null, callback);
 };
 
-RailsApi.prototype.post = function (resource, action, data, callback) {
-  this.requestOnResource(resource, action, "POST", data, callback);
-};
-
-RailsApi.prototype.requestOnResource = function (resource, action, method, data, callback) {
-  this.request(resource + ((action) ? "/" + action : ""), method, data, function (data) {
-    callback(data);
-  });
+RailsApi.prototype.post = function (path, callback) {
+  this.request(path, "POST", data, callback);
 };
 
 RailsApi.prototype.request = function (path, method, data, callback) {
@@ -98,7 +92,7 @@ RailsApi.prototype.request = function (path, method, data, callback) {
 
   var options = {
     method: method,
-    path: "/api/" + path,
+    path: "/api/ticketing/node/" + path,
     rejectUnauthorized: false,
     headers: {
       "Content-Type": "application/json",

@@ -57,8 +57,8 @@ function Seats() {
     _this.update(seats);
   });
 
-  railsApi.get("seats", "availability", function (seatsInfo) {
-    console.log("Initializing seats, fetching info from Rails...");
+  railsApi.get("events", function (seatsInfo) {
+    console.log("Initializing seats, fetching event info from Rails...");
     _this.events = seatsInfo.events;
     _this.update(seatsInfo.seats);
   });
