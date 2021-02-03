@@ -11,8 +11,10 @@ if (process.env.NODE_ENV == "production") {
     console.log('error: missing ENV variable SENTRY_DSN');
     process.exit(1);
   }
-  var Raven = require('raven');
-  Raven.config(dsn).install();
+  var Sentry = require('@sentry/node');
+  Sentry.init({
+    dsn: dsn
+  });
 }
 
 var clients = {};
