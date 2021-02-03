@@ -19,15 +19,8 @@ audit:
 deploy:
   extends: .yarn
   stage: deploy
-  before_script:
-    - eval $(ssh-agent -s)
-    - echo "$DEPLOY_HOST_KEYS" > ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-    - echo "$DEPLOY_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
   script:
-    - ssh node@theater-kaisersesch.de "cd ~/FasT-node && git pull && service fast_node restart"
-    # needs to be run here (not in after_script) or the job will get stuck
-    - ssh-agent -k
+    - ssh_wrap ssh node@theater-kaisersesch.de "cd /home/node/FasT-node && git pull && service fast_node restart"
   environment:
     name: production
   only:
