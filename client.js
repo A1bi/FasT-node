@@ -34,6 +34,7 @@ Client.prototype.disconnect = function () {
 };
 
 Client.prototype.destroy = function () {
+  clearTimeout(this.connectionTimeoutTimer);
   this.emit("destroyed");
   console.log(`Client ${this.id} destroyed.`);
 };
